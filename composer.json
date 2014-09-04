@@ -1,0 +1,19 @@
+{
+    "name": "maxowar/core",
+    "type": "library",
+    "description": "Core, personal PHP framework",
+    "keywords": ["MVC", "framework"],
+    "license": "MIT",
+    "authors": [
+        {"name": "Maxowar"}
+    ],
+    "require": {
+        "symfony/event-dispatcher": "2.5.*",
+        "symfony/console": "2.5.*",
+        "symfony/debug": "2.5.*",
+        "monolog/monolog": "1.*"
+    },
+    "autoload": {
+        "psr-0": { "Core\\": "src/", "Frontend\\": "project/apps/" }
+    }
+}
