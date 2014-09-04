@@ -1,6 +1,8 @@
 <?php
 
 namespace Core\View;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\GenericEvent;
 
 /**
  * Template engine
@@ -72,7 +74,7 @@ abstract class View
       }
       else
       {
-        throw new ViewException('Need a EventDispatcher instance available in the context'); // problemi di compatibilità
+        throw new \Exception('Need a EventDispatcher instance available in the context'); // problemi di compatibilità
       }
     }
 
@@ -85,22 +87,6 @@ abstract class View
     if(isset($options['id']))
     {
       $this->setId($options['id']);
-    }
-
-    $this->initializeCache();
-    
-    if(isset($options['cache']))
-    {
-      $cacheOption = array_merge(array('enabled' => false), $options['cache']);
-
-      if($cacheOption['enabled'])
-      {
-        $this->getCache()->enable();
-      }
-      if($cacheOption['lifetime'])
-      {
-        $this->getCache()->lifetime($cacheOption['lifetime']);
-      }
     }
 
     $this->event_dispatcher = $eventDispatcher;
@@ -117,48 +103,31 @@ abstract class View
     $this->id = null;
     
     $this->cache = null;
-    $this->initializeCache();
+    //$this->initializeCache();
   }
 
   public function render($variables = array())
   {
-    if($this->getCache()->isCacheable())
-    {
-      if($this->buffer = $this->getCache()->get($this->getId()))
-      {
-        Config::get('LOG/debug') && Logger::debug(sprintf('View | render | Buffer taken from cache with id "%s"', $this->getId()));
-
-        return $this->buffer;
-      }
-    }
-
-    $this->event_dispatcher->notify(new Event($this, 'view.pre_render'));
+    $this->event_dispatcher->dispatch('view.pre_render', new GenericEvent($this));
     
     $this->preRender();
 
     $this->addVariables($variables);
     
-    $this->variables = (array) $this->event_dispatcher->filter(new Event($this, 'view.filter_parameters'), $this->variables)->getReturnValue();
+    $this->variables = (array) $this->event_dispatcher->dispatch('view.filter_parameters', new GenericEvent($this, $this->variables))->getArguments();
 
     $this->buffer = $this->doRender();
 
     if($this->decorator)
     {
-      Logger::log(sprintf('View | render | loading decorator "%s"', $this->decorator->getTemplate()), 6);
+      //Logger::log(sprintf('View | render | loading decorator "%s"', $this->decorator->getTemplate()), 6);
 
       $this->buffer = $this->decorator->render();
     }
     
-    $this->event_dispatcher->notify(new Event($this, 'view.post_render'));
+    $this->event_dispatcher->dispatch('view.post_render', new GenericEvent($this));
 
     $this->postRender();
-    
-    if($this->getCache()->isCacheable())
-    {
-      Config::get('LOG/debug') && Logger::debug(sprintf('View | render | Saving view cache for id "%s"', $this->getId()));
-
-      $this->getCache()->set($this->getId(), $this->buffer);
-    }
 
     return $this->buffer;
   }
@@ -177,11 +146,11 @@ abstract class View
   {
     if(!isset($this->template))
     {
-      throw new CoreException('Cannot create id view without template name initialized');
+      throw new \Exception('Cannot create id view without template name initialized');
     }
     
     $id = md5($this->template);    
-    $id = $this->event_dispatcher->filter(new Event($this, 'view.filter_id'), $id)->getReturnValue();
+    $id = $this->event_dispatcher->dispatch('view.filter_id', new GenericEvent($this, $id))->getArguments();
     
     return $id;
   }
@@ -248,7 +217,7 @@ abstract class View
         return;
       }
     }
-    throw new CoreException(sprintf('View "%s" non trovata', $this->template));
+    throw new \Exception(sprintf('View "%s" non trovata', $this->template));
   }
 
   public function getDefaultPath()

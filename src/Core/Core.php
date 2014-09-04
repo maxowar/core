@@ -9,6 +9,7 @@ use Core\Routing\Route\Route;
 use Core\Routing\Routing;
 use Core\Util\Config;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\GenericEvent;
 
 /**
  * Contiene le routine per l'inizializzazione iniziale di ogni applicazione
@@ -168,7 +169,7 @@ class Core
    */
   private $session;
 
-  private $module;
+  private $controller;
 
   private $action;
 
@@ -490,14 +491,12 @@ class Core
 
   public function getActionName()
   {
-    //return strtolower($this->getRequestParameter('p'));
     return $this->action;
   }
 
-  public function getModuleName()
+  public function getControllerName()
   {
-    //return strtolower($this->getRequestParameter('module'));
-    return $this->module;
+    return $this->controller;
   }
 
   /**
@@ -681,15 +680,6 @@ class Core
    */
   public function initializeController($controller, $action = null)
   {
-    //$controllerClassName = $p;
-
-    // caricamento di un file con action multiple
-    //if(isset($module))
-    //{
-     // $controllerClassName = ucfirst($module) . 'Controllers';
-    //}
-
-
     $controllerClassName = ucfirst($this->configuration->getApplicationName()) . '\\Controller\\' . $controller;
 
 
@@ -764,17 +754,12 @@ class Core
    * ad un'altra senza effettuare un redirect HTTP
    *
    */
-  public function forward($controller, $action = null)
+  public function forward($controller, $action)
   {
     if($this->nbForwards > 5)
     {
       throw new CoreException('Superato il limite massimo (5) di forward');
     }
-    
-    // @todo i parametri del front-controller (indirizzo interno) non dovrebbero confondersi con quelli della request
-    //Routing::getCurrentRequestRoute()->setParameter('p', $action);
-    //Routing::getCurrentRequestRoute()->setParameter('module', $module);
-    //$this->page = $this->getRequestParameter('p');
 
     $this->action = $action;
     $this->controller = $controller;
@@ -876,13 +861,7 @@ class Core
    */
   public function getActionTemplate()
   {
-    $path = '';
-    if($this->getModuleName())
-    {
-      $path = strtolower($this->getModuleName()) . DIRECTORY_SEPARATOR;
-    }
-
-    return $path . ucfirst($this->getActionName());
+    return $this->getControllerName() . DIRECTORY_SEPARATOR . $this->getActionName();
   }
 
   /**
@@ -1159,23 +1138,21 @@ class Core
   {
     $this->renderer = $this->initializeRenderer();
 
-    $this->renderer->setSuffix( Config::get('VIEW/suffix', '.view'));
+    //$this->renderer->setSuffix( Config::get('VIEW/suffix', '.view'));
 
-    $this->renderer->addVariable('data', $this->data); // @todo spostare. serve solo per retrocompatibilità con progetti vecchi (ASM)
     $this->renderer->addVariable('context', $this);
 
-    //$this->event_dispatcher->notify(new Event($this->renderer, 'view.configure'));
+    $this->event_dispatcher->dispatch('view.configure', new GenericEvent($this->renderer));
 
     $this->isViewInitialized = true;
   }
 
   public function initializeRenderer($class = null, $params = array())
   {
-    $class = $class ? $class : Config::get('VIEW/class', 'PHPView');
+    $class = $class ? $class : Config::get('VIEW/class', 'Core\View\Php');
 
     $params = array_merge(array(
-        'default_path' => $this->configuration->getTemplatesDir(),
-        'cache_driver' => Config::get('VIEW/cache_driver', 'sfNoCache') // default disabilitata a livello globale
+        'default_path' => $this->configuration->getTemplatesDir()
     ), $params);
 
     $renderer = new $class(
@@ -1183,14 +1160,14 @@ class Core
         $params,
         $this->event_dispatcher);
 
-    if(!($renderer instanceof View))
+    if(!($renderer instanceof \Core\View\View))
     {
-      throw new RuntimeException('La variabile $renderer non è di tipo View');
+      throw new \RuntimeException('La variabile $renderer non è di tipo View');
     }
 
-    $renderer->setSuffix( Config::get('VIEW/suffix', '.view')); // default suffix
+    $renderer->setSuffix(''); // default suffix
 
-    $this->event_dispatcher->notify(new Event($renderer, 'view.configure'));
+    $this->event_dispatcher->dispatch('view.configure', new GenericEvent($renderer));
 
     return $renderer;
   }

@@ -6,6 +6,6 @@ class Homepage
 {
     public function execute()
     {
-
+        return "controller return value";
     }
 }

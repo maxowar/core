@@ -27,7 +27,7 @@ class PHP extends View
 
     if(!isset($options['template_extension']))
     {
-      $this->options['template_extension'] = '.php';
+      $this->options['template_extension'] = '.phtml';
     }
   }
 
@@ -65,7 +65,7 @@ class PHP extends View
 
   public function doRender()
   {
-    Logger::log(sprintf('PHPView | doRender | rendering template "%s"', $this->getTemplate()), 6);
+    //Logger::log(sprintf('PHPView | doRender | rendering template "%s"', $this->getTemplate()), 6);
 
     ob_start();
 
@@ -169,7 +169,7 @@ class PHP extends View
 
     if(isset($name) && $lastSlot != $name)
     {
-      throw new ViewException(sprintf('Ending rendering slot non started. End %s before %s', $lastSlot, $name));
+      throw new \Exception(sprintf('Ending rendering slot non started. End %s before %s', $lastSlot, $name));
     }
 
     $content = ob_get_contents();

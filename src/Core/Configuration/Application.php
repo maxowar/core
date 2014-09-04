@@ -2,6 +2,7 @@
 
 namespace Core\Configuration;
 
+use Core\Routing\Routing;
 use Core\Util\Config;
 
 /**
@@ -93,11 +94,14 @@ class Application extends Project
     // inizializza path di default dell'applicazione
     $this->paths = array(
       array(
-        Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'controller' . DIRECTORY_SEPARATOR . $this->getApplicationName(),
+        Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'apps' . DIRECTORY_SEPARATOR . ucfirst($this->getApplicationName()) . DIRECTORY_SEPARATOR .
+            'Controller',
         Config::get('MAIN/core_path') . DIRECTORY_SEPARATOR . 'controller'
       ),
-      array(Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'view' . DIRECTORY_SEPARATOR . $this->getApplicationName()),
-      Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'ini' . DIRECTORY_SEPARATOR . $this->getApplicationName(),
+      array(
+          Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'apps' . DIRECTORY_SEPARATOR . ucfirst($this->getApplicationName()) . DIRECTORY_SEPARATOR .
+                'View'),
+      Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'config',
       Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'lib' 
     );
 

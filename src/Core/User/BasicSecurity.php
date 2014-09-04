@@ -1,12 +1,14 @@
 <?php
 
+namespace Core\User;
+
 /**
  * Semplice implementazione dell'interfaccia di sicurezza
  *
  * @author Massimo Naccari <massimo.naccari@wdmn.it>
  *
  */
-abstract class BasicUserSecurity implements UserSecurity
+abstract class BasicSecurity implements Security
 {
 	/**
    * @param unknown_type $credential

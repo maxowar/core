@@ -1,6 +1,8 @@
 <?php
 
-interface UserSecurity
+namespace Core\User;
+
+interface Security
 {
   /**
    * Aggiunge una credenziale all'utente

@@ -102,9 +102,9 @@ class Route implements RouteInterface
     }
 
     // setting della default action per un modulo
-    if(array_key_exists('module',$this->params) && !array_key_exists('p',$this->params))
+    if(!array_key_exists('_action', $this->params))
     {
-      $this->params['_action'] = 'index';
+      $this->params['_action'] = 'execute';
     }
 
     $this->requirements = isset($parameters['requirements']) ? $parameters['requirements'] : array();

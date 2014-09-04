@@ -22,7 +22,7 @@ class Rendering extends Filter
 
     // è il momento propizio per inviare gli headers ... hahaha non sono gestiti! hahah
     
-    $filterManager->dispatcher->getEventDispatcher()->notify(new Event($this, 'filter.rendering', array('filterManager' => $filterManager)));
+    $filterManager->dispatcher->getEventDispatcher()->dispatch('filter.rendering', new Event( array('filterManager' => $filterManager)));
 
     if($filterManager->getContext()->shallRender())
     {
