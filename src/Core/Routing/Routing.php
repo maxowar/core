@@ -2,7 +2,7 @@
 
 namespace Core\Routing;
 
-use Core\Exception\PageNotFound;
+use Core\Http\Request;
 use Core\Routing\Route\Route;
 use Core\Util\Config;
 
@@ -17,7 +17,7 @@ use Core\Util\Config;
 class Routing
 {
   const ROUTE_NAME_DEFAULT        = 'default';
-  const ROUTE_NAME_MODULE_DEFAULT = 'default_module';
+  const GENERIC_ROUTE_NAME        = 'generic_route'; // avoid use of it
   const CONFIG_FILENAME           = 'routing.php';
 
   const PREPEND = 'prepend';
@@ -37,85 +37,25 @@ class Routing
    *
    * @var array
    */
-  private static $routes = array();
+  private $routes = array();
+
+    private $extension;
 
   /**
    * Regola corrente
    *
    * @var Route
    */
-  private static $currentRoute;
+  private $currentRoute;
 
   /**
    * Il nome della route della request corrente
    *
    * @var string
    */
-  private static $currentRouteName;
+  private $currentRouteName;
 
-  /**
-   *
-   * @var CacheRouting
-   */
-  private static $cache;
-
-  /**
-   * array dei files
-   *
-   * @var array
-   */
-  private static $fixedFileArray = false;
-
-  /**
-   * Mappa dei codici di stato HTTP
-   *
-   * @var array
-   */
-  static protected $statusTexts = array(
-    '100' => 'Continue',
-    '101' => 'Switching Protocols',
-    '200' => 'OK',
-    '201' => 'Created',
-    '202' => 'Accepted',
-    '203' => 'Non-Authoritative Information',
-    '204' => 'No Content',
-    '205' => 'Reset Content',
-    '206' => 'Partial Content',
-    '300' => 'Multiple Choices',
-    '301' => 'Moved Permanently',
-    '302' => 'Found',
-    '303' => 'See Other',
-    '304' => 'Not Modified',
-    '305' => 'Use Proxy',
-    '306' => '(Unused)',
-    '307' => 'Temporary Redirect',
-    '400' => 'Bad Request',
-    '401' => 'Unauthorized',
-    '402' => 'Payment Required',
-    '403' => 'Forbidden',
-    '404' => 'Not Found',
-    '405' => 'Method Not Allowed',
-    '406' => 'Not Acceptable',
-    '407' => 'Proxy Authentication Required',
-    '408' => 'Request Timeout',
-    '409' => 'Conflict',
-    '410' => 'Gone',
-    '411' => 'Length Required',
-    '412' => 'Precondition Failed',
-    '413' => 'Request Entity Too Large',
-    '414' => 'Request-URI Too Long',
-    '415' => 'Unsupported Media Type',
-    '416' => 'Requested Range Not Satisfiable',
-    '417' => 'Expectation Failed',
-    '500' => 'Internal Server Error',
-    '501' => 'Not Implemented',
-    '502' => 'Bad Gateway',
-    '503' => 'Service Unavailable',
-    '504' => 'Gateway Timeout',
-    '505' => 'HTTP Version Not Supported',
-  );
-
-  protected static $initialized = false;
+  protected $initialized = false;
   
   /**
    * Inizializzazione del sistema di routing
@@ -128,23 +68,20 @@ class Routing
    *
    * @param array $parametes Parametri per configurare l'inizializzazione
    */
-  public static function initialize($parameters = array())
+  public function __construct()
   {
     // gestione delle estensioni che non si vogliono gestire dinamicamente
     if( (isset($_SERVER[self::ENV_EXTENSION_DISABLES]) && $_SERVER[self::ENV_EXTENSION_DISABLES] != '') ||
         (isset($_ENV[self::ENV_EXTENSION_DISABLES]) && $_ENV[self::ENV_EXTENSION_DISABLES] != ''))
     {
-      Logger::info('Routing | initialize | Estensione non abilitata');
+      //Logger::info('Routing | initialize | Estensione non abilitata');
 
-      throw new PageNotFound('Estensione non abilitata');
+      throw new \PageNotFound('Estensione non abilitata');
     }
 
-    Route::$extension = str_replace('.', '', Config::get('ROUTING/extension', ''));
+    $this->extension = str_replace('.', '', Config::get('ROUTING/extension', ''));
 
-
-      self::loadRoutesFromFile(Config::get('MAIN/base_path') . '/config/routing.php');
-
-    self::$initialized = true;
+    $this->initialized = true;
   }
 
   /**
@@ -153,14 +90,14 @@ class Routing
    * @param string $filename
    * @return void
    */
-  public static function loadRoutesFromFile($filename, $position = self::APPEND, $clearAll = false)
+  public function loadRoutesFromFile($filename, $position = self::APPEND, $clearAll = false)
   {
     if(!file_exists($filename))
     {
       throw new \Exception(sprintf('Il file delle configurazioni delle regole di routing non è disponibile. Controllare che esista "%s"', $filename));
     }
 
-    $clearAll ? self::clear() : null;
+    $clearAll ? $this->clear() : null;
 
     $routes = include $filename;
 
@@ -169,7 +106,7 @@ class Routing
       return;
     }
 
-        self::addRoutes($routes);
+        $this->addRoutes($routes);
   }
 
   /**
@@ -178,16 +115,15 @@ class Routing
    * @param Route $route
    * @return void
    */
-  public static function prependRoute(Route $route)
+  public function prependRoute(Route $route)
   {
-    $routes = self::$routes;
-    self::$routes = array();
-
-    self::$routes[$route->getName()] = $route;
+    $routes = $this->routes;
+    $this->routes = array();
+    $this->routes[$route->getName()] = $route;
 
     foreach($routes as $route)
     {
-      self::$routes[$route->getName()] = $route;
+      $this->$routes[$route->getName()] = $route;
     }
   }
 
@@ -197,9 +133,9 @@ class Routing
    * @param Route $route
    * @return void
    */
-  public static function appendRoute(Route $route)
+  public function appendRoute(Route $route)
   {
-    self::$routes[$route->getName()] = $route;
+    $this->routes[$route->getName()] = $route;
   }
   
   /**
@@ -207,14 +143,14 @@ class Routing
    * 
    * @param Route $route
    */
-  public static function prependRouteTo(Route $route, $position)
+  public function prependRouteTo(Route $route, $position)
   {
-    if(!self::$routes[$position])
+    if(!$this->routes[$position])
     {
-      throw new CoreException(sprintf('Cannot prepend to route at "%s"', $position));
+      throw new \InvalidArgumentException("Route '$position' doesnt exists");
     }
     
-    self::$routes = array_insert(self::$routes, $route, $position);
+    $this->routes = array_insert($this->routes, $route, $position);
   }
 
   /**
@@ -222,9 +158,9 @@ class Routing
    *
    * @return void
    */
-  public static final function clear()
+  public final function clear()
   {
-    self::$routes = array();
+    $this->routes = array();
   }
 
   /**
@@ -234,9 +170,9 @@ class Routing
    *
    * @param Route $route
    */
-  public static function add(Route $route)
+  public function add(Route $route)
   {
-    self::appendRoute($route);
+    $this->appendRoute($route);
   }
 
   /**
@@ -244,11 +180,11 @@ class Routing
    *
    * @param array $routes
    */
-  public static function addRoutes(array $routes)
+  public function addRoutes(array $routes)
   {
     foreach($routes as $route)
     {
-      self::add($route);
+      $this->add($route);
     }
   }
 
@@ -258,9 +194,9 @@ class Routing
    * @param string $routeName
    * @return boolean
    */
-  public static function has($routeName)
+  public function has($routeName)
   {
-    return array_key_exists((string)$routeName, self::$routes);
+    return array_key_exists((string)$routeName, $this->$routes);
   }
 
   /**
@@ -269,16 +205,16 @@ class Routing
    * @param string $routeName
    * @return Route
    */
-  public static function get($routeName)
+  public function get($routeName)
   {
-    if(!self::$initialized) Routing::initialize();
-    
-    if(!isset(self::$routes[$routeName]))
+    if(!$this->initialized) $this->initialize();
+
+    if(!isset($this->routes[$routeName]))
     {
-      throw new RuntimeException(sprintf('Non esiste alcuna route "%s"', $routeName));
+      throw new \InvalidArgumentException("Route '$routeName' doesnt exists");
     }
     
-    return self::$routes[$routeName];
+    return $this->routes[$routeName];
   }
 
   /**
@@ -286,9 +222,9 @@ class Routing
    *
    * @return array
    */
-  public static function getAll()
+  public function getAll()
   {
-    return self::$routes;
+    return $this->routes;
   }
 
   /**
@@ -301,17 +237,17 @@ class Routing
    *
    * @return Route La route
    */
-  public static function matchCurrentRequest()
+  public function matchRequest(Request $request)
   {
-    if(self::$currentRoute instanceof Route)
+    if($this->currentRoute instanceof Route)
     {
-      return self::$currentRoute;
+      return $this->$currentRoute;
     }
 
-    if(false !== $route = self::parse($_SERVER['REQUEST_URI']))
+    if(false !== $route = $this->parse($request->getUri()))
     {
-      self::$currentRoute = $route;
-      self::$currentRouteName = $route->getName();
+      $this->currentRoute = $route;
+      $this->currentRouteName = $route->getName();
 
       //Logger::info(sprintf('Routing | matchCurrentRequest | Request "%s %s" match con "%s", parametri %s', strtoupper(self::getRequestMethod()), $_SERVER['REQUEST_URI'], $route->getName(), print_r($route->getAllParameters(), true)));
 
@@ -319,10 +255,13 @@ class Routing
     }
 
     // nota: serve per non rompere il codice dove si presuppone che ci sia sempre una (current) Route inizializzata
-    self::$currentRoute = new Route('404', array('url' => '/' . $_SERVER['REQUEST_URI'], 'params' => array('p' => Config::get('forward404_action', 'Page404'), 'module' => Config::get('forward404_module'))));
-    self::$currentRouteName = '404';
+    $this->currentRoute = new Route('404', array('url' => $request->getUri(), 'params' => array('_controller' => Config::get('forward404_controller', 'Core\Controller\Default'), '_action' => 'pageNotFound')));
+    $this->currentRouteName = '404';
 
-    throw new PageNotFoundException(sprintf('Impossibile trovare una route per "%s"', $_SERVER['REQUEST_URI']));
+      return $this->currentRoute;
+
+    //throw new PageNotFoundException(sprintf('Impossibile trovare una route per "%s"', $_SERVER['REQUEST_URI'])); si? no? boh? forse? meglio? chissà... dilemma angustiante
+      // nota: semmai ritornare false o null e lanciare poi una eccezione bah... il dilemma continua
   }
 
   /**
@@ -335,25 +274,12 @@ class Routing
    * @param string $url Una stringa rappresentante una URL
    * @return Route La route corrispondente | false altrimenti
    */
-  public static function parse($url)
+  public function parse($url)
   {
     $url = parse_url($url);
 
-    //$url = self::normalizeUrl($url);
-
-    // chiamata diretta al front-controller del tipo /index.php?p=Home[&param=value]
-    if (preg_match('%^/[a-z]+.php$%', $url['path']) || 
-        Config::get('ROUTING/bc') && isset($_GET['p']))
-    {
-      if(!Config::get('ROUTING/allow_query_string', false))
-      {
-        throw new RoutingException('Non è consentito inserire parametri come query string nell\'url');
-      }
-      return self::getDefaultRoute()->setParameters($_GET);
-    }
-
     // ciclo su tutte le route definite per trovare quella che corrisponde all'URL corrente
-    foreach (self::$routes as $name => $route)
+    foreach ($this->routes as $name => $route)
     {
       $clone = clone $route;
       if (!$clone->matchesUrl($url['path']))
@@ -373,114 +299,14 @@ class Routing
    *
    * @return Route
    */
-  public static function getDefaultRoute()
+  public function getDefaultRoute()
   {
-    return self::$routes[self::ROUTE_NAME_DEFAULT];
+    return $this->routes[self::ROUTE_NAME_DEFAULT];
   }
 
-  /**
-   * Normalizzazione dell'url
-   *
-   * - url inizia con '/'
-   * - query_string eliminata
-   * - caratteri '/' consecutivi eliminati
-   *
-   * @param $url
-   * @return unknown_type
-   */
-  protected static function normalizeUrl(&$url)
-  {
-    // an URL should start with a '/', mod_rewrite doesn't respect that, but no-mod_rewrite version does.
-    if ('/' != substr($url, 0, 1))
-    {
-      $url = '/'.$url;
-    }
 
-    // we remove the query string
-//    if (false !== $pos = strpos($url, '?'))
-//    {
-//      $url = substr($url, 0, $pos);
-//    }
 
-    // remove multiple /
-    $url = preg_replace('#/+#', '/', $url);
 
-    return $url;
-  }
-
-  /**
-   * Effettua un redirect ad un URI
-   *
-   * @param mixed   $route
-   * @param integer $cod   Un codice HTTP valido
-   */
-  public static function redirect($route = '' , $cod = 302)
-  {
-    if(Config::get('LOG/debug'))
-    {
-      $trace = debug_backtrace();
-      Logger::log('Routing | redirect | Redirect invocato in "' . $trace[0]['file'] . '(' . $trace[0]['line'] . ')" codice HTTP: ' . $cod, Logger::DEBUG);
-    }
-
-    // url
-    if(!is_object($route) && (Utility::isValidUri($route) || Utility::isAbsolutePath($route)))
-    {
-      self::doRedirect($route);
-    }
-
-    $destination = '/';
-    if(empty($cod) || !is_numeric($cod))
-    {
-      $cod = 302;
-    }
-    
-    // route name
-    if(is_string($route))
-    {
-      $route = Routing::get($route);
-    }
-
-    // route object
-    if($route instanceof Route)
-    {
-      $destination = $route->createUrl();
-    }
-    
-    // what a shit u gave me?
-    else
-    {
-      throw new CoreException('$route must be a valid url, string route name or Route obj');
-    }
-
-    self::normalizeUrl($destination);
-
-    self::doRedirect($destination, $cod);
-  }
-
-  /**
-   * Inizializza gli header HTTP per effettuare un redirect
-   *
-   * @param string  $destination L'URI di destinazione
-   * @param integer $cod
-   */
-  private static final function doRedirect($destination, $cod = 302)
-  {
-    if(array_key_exists($cod, self::$statusTexts))
-    {
-      $textStatus = self::$statusTexts[$cod];
-    }
-    else
-    {
-      $cod = 302;
-      $textStatus = self::$statusTexts[$cod];
-    }
-
-    Logger::info('Routing | redirect | Redirecting all\'indirizzo "' . $destination . '"');
-
-    header('HTTP/1.1 '.$cod.' '.$textStatus);
-    header('Location: ' . $destination);
-    exit(0);
-  }
 
   /**
    * ritorna l'istanza di route relativa alla richiesta HTTP corrente
@@ -498,14 +324,14 @@ class Routing
    * @param string $matchName
    * @return string|boolean Se <var>$matchName</var> &egrave; diverso da null la funzione ritorna il test {@source 1 3 }
    */
-  public static function getCurrentRequestRouteName($matchName = null)
+  public function getCurrentRequestRouteName($matchName = null)
   {
     if($matchName)
     {
-      return self::$currentRouteName == $matchName;
+      return $this->currentRouteName == $matchName;
     }
 
-    return self::$currentRouteName;
+    return $this->currentRouteName;
   }
 
   /**
@@ -514,9 +340,9 @@ class Routing
    * @param $parameters
    * @return array
    */
-  public static function getCurrentRequestParameters($parameters = array())
+  public function getCurrentRequestParameters($parameters = array())
   {
-    return self::$currentRoute->getAllParameters($parameters);
+    return $this->currentRoute->getAllParameters($parameters);
   }
 
   /**
@@ -532,121 +358,17 @@ class Routing
     return $clone;
   }
 
-  /**
-   * Ritorna il metodo HTTP della request
-   *
-   * Viene data precedenza al metodo della richiesta fittizio, impostabili attraverso il parametro 'request_method',
-   * questo per simulare tutti i metodi disponibili dal protocollo HTTP ma non usabili
-   * attraverso i browser
-   *
-   * Esempio di utilizzo:
-   * <code>
-   * if(Routing::getRequestMethod() == Routing::POST)
-   * {
-   *   echo "POST";
-   * }
-   * </code>
-   *
-   * @link http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html HTTP Method Definitions
-   *
-   * @return string Il metodo HTTP della request
-   */
-  public static function getRequestMethod()
+
+
+
+
+  public function setCurrentRequestRoute(Route $route)
   {
-    if(self::getCurrentRequestRoute())
-    {
-      return strtolower(self::getCurrentRequestRoute()->getParam('request_method') == null ?
-                        $_SERVER['REQUEST_METHOD'] :
-                        self::getCurrentRequestRoute()->getParam('request_method'));
-    }
-    return null;
-  }
-
-  /**
-   * Retrieves an array of files.
-   *
-   * {@see sfWebRequest} property of symfony
-   *
-   * @param  string $key  A key
-   * @return array  An associative array of files
-   */
-  public static function getFiles($key = null)
-  {
-    if (false === self::$fixedFileArray)
-    {
-      self::$fixedFileArray = self::convertFileInformation($_FILES);
-    }
-
-    return null === $key ? self::$fixedFileArray : (isset(self::$fixedFileArray[$key]) ? self::$fixedFileArray[$key] : array());
-  }
-
-  /**
-   * Converts uploaded file array to a format following the $_GET and $POST naming convention.
-   *
-   * It's safe to pass an already converted array, in which case this method just returns the original array unmodified.
-   *
-   * {@see sfWebRequest} property of symfony
-   *
-   * @param  array $taintedFiles An array representing uploaded file information
-   *
-   * @return array An array of re-ordered uploaded file information
-   */
-  static public function convertFileInformation(array $taintedFiles)
-  {
-    $files = array();
-    foreach ($taintedFiles as $key => $data)
-    {
-      $files[$key] = self::fixPhpFilesArray($data);
-    }
-
-    return $files;
-  }
-
-  /**
-   * {@see sfWebRequest} property of symfony
-   *
-   * @param unknown_type $data
-   */
-  static protected function fixPhpFilesArray($data)
-  {
-    $fileKeys = array('error', 'name', 'size', 'tmp_name', 'type');
-    $keys = array_keys($data);
-    sort($keys);
-
-    if ($fileKeys != $keys || !isset($data['name']) || !is_array($data['name']))
-    {
-      return $data;
-    }
-
-    $files = $data;
-    foreach ($fileKeys as $k)
-    {
-      unset($files[$k]);
-    }
-    foreach (array_keys($data['name']) as $key)
-    {
-      $files[$key] = self::fixPhpFilesArray(array(
-        'error'    => $data['error'][$key],
-        'name'     => $data['name'][$key],
-        'type'     => $data['type'][$key],
-        'tmp_name' => $data['tmp_name'][$key],
-        'size'     => $data['size'][$key],
-      ));
-    }
-
-    return $files;
-  }
-
-  public static function setCurrentRequestRoute(Route $route)
-  {
-    self::$currentRoute = $route;
-    self::$currentRouteName = $route->getName();
+      $this->currentRoute = $route;
+      $this->currentRouteName = $route->getName();
   }
   
-  public static function getHost()
-  {
-    return $_SERVER['HTTP_HOST'] ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'];
-  }
+
 }
 
 /**

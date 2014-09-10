@@ -53,7 +53,7 @@ class Cache extends sfFileCache
 
     foreach($classesToInclude as $filterClassName)
     {
-      $code .= sprintf('include_once(\'%s/lib/filter/%s.class.php\');', Config::get('MAIN/base_path'), $filterClassName) . "\n";
+      $code .= sprintf('include_once(\'%s/lib/filter/%s.class.php\');', Config::get('application.dir'), $filterClassName) . "\n";
     }
 
     $code .= "\n" .  '$filter = ' .var_export($classesToInclude, true) . ";\n\n";

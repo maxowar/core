@@ -33,7 +33,7 @@ class Config implements \ArrayAccess
    * {@source 3 5}
    * che permette di richiamare la costante attraverso il seguente codice:
    * <code>
-   * Config::get('MAIN/base_path');
+   * Config::get('application.dir');
    * </code>
    *
    * @param string $name

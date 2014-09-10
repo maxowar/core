@@ -51,8 +51,8 @@ class Autoload
     $finder = sfFinder::type('file')->name('*.php')->follow_link();
 
     $dirs = array(Config::get('MAIN/core_path') . '/lib',
-                  Config::get('MAIN/base_path') . '/controller',
-                  Config::get('MAIN/base_path') . '/lib');
+                  Config::get('application.dir') . '/controller',
+                  Config::get('application.dir') . '/lib');
 
     // @todo: mergiare l'array delle directory con quelle definite dall'utente per il progetto
 

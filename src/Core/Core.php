@@ -8,6 +8,9 @@ use Core\Filter\Manager;
 use Core\Routing\Route\Route;
 use Core\Routing\Routing;
 use Core\Util\Config;
+use Core\Util\Utility;
+use Core\Http\Request;
+use Core\Http\Response;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\GenericEvent;
 
@@ -55,7 +58,7 @@ class Core
    *
    * @var EventDispatcher
    */
-  private $event_dispatcher;
+  private $eventDispatcher;
 
   /**
    * Lista delle voci del dizionario per la lingua corrente
@@ -114,6 +117,10 @@ class Core
    */
   private $controller_obj;
 
+    /**
+     * @var \Core\Routing\Routing
+     */
+    private $routing;
 
   /**
    *
@@ -179,6 +186,19 @@ class Core
 
   protected $renderer;
 
+    /**
+     * @var \Core\Http\Request
+     *
+     */
+    protected $request;
+
+    /**
+     * @var \Core\Http\Response
+     *
+     */
+    protected $response;
+
+
   /**
    * inizializza le variabili di sistema, imposta i path dell'applicazione
    *
@@ -201,9 +221,9 @@ class Core
 
     $this->renderView = true;
 
-    self::$instance = $this;
+//    self::$instance = $this;
 
-    $this->event_dispatcher = new EventDispatcher();
+    $this->eventDispatcher = $projectConfiguration->getEventDispatcher();
 
     register_shutdown_function(array($this, 'shutdown'));
 
@@ -244,7 +264,7 @@ class Core
 	    {
 	      include_once $filename;
 
-	      //Config::get('LOG/debug') && Logger::info(sprintf('Core | loadController | Inclusa la classe "%s" per il dispatcher "%s"', $filename, $controllerName));
+	      //Config::get('application.debug') && Logger::info(sprintf('Core | loadController | Inclusa la classe "%s" per il dispatcher "%s"', $filename, $controllerName));
 
 	      return new self($projectConfiguration);
 	    }
@@ -277,7 +297,7 @@ class Core
     // @todo sistema autonomo (non nativo di PHP si intende) di registrazione degli "shutdown" per controllarne l'ordine di esecuzione
 
     // stop di tutti i cronometri
-	  if(Config::get('LOG/debug'))
+	  if(Config::get('application.debug'))
     {
       //foreach (sfTimerManager::getTimers() as $name => $timer)
       //{
@@ -345,7 +365,7 @@ class Core
       //var_dump(Autoload::getInstance()->loadClass($sessionClass));
       $this->session = new $sessionClass($params);
 
-      $this->event_dispatcher->notify(new Event($this->session, 'session.initialize'));
+      $this->eventDispatcher->notify(new Event($this->session, 'session.initialize'));
 
       if(!($this->session instanceof Session))
       {
@@ -381,7 +401,7 @@ class Core
 	 */
 	public static function loadController($controllerName)
 	{
-        $namespace = ucfirst($this->configuration->getApplicationName()) . '\\' . $controllerName;
+        //$namespace = ucfirst($this->configuration->getApplicationName()) . '\\' . $controllerName;
 
 
 
@@ -391,7 +411,7 @@ class Core
 	    {
 	      include_once $filename;
 
-	      //Config::get('LOG/debug') && Logger::debug(sprintf('Core | loadController | Inclusa la classe "%s" per il controller "%s"', $filename, $controllerName));
+	      //Config::get('application.debug') && Logger::debug(sprintf('Core | loadController | Inclusa la classe "%s" per il controller "%s"', $filename, $controllerName));
 
 	      return;
 	    }
@@ -524,7 +544,7 @@ class Core
       $name = $this->getActionTemplate();
     }
 
-    $this->getRenderer()->setTemplate($name);
+    $this->getView()->setTemplate($name);
   }
 
   /**
@@ -536,7 +556,7 @@ class Core
    */
   public function getRequestParameter($param, $default = null)
   {
-    return Routing::getCurrentRequestRoute()->getParam($param, $default);
+    return $this->getCurrentRequestRoute()->getParam($param, $default);
   }
 
   /**
@@ -548,7 +568,7 @@ class Core
    */
   public function setRequestParameter($param, $value = null)
   {
-      return Routing::getCurrentRequestRoute()->setParameter($param, $value);
+      return $this->getCurrentRequestRoute()->setParameter($param, $value);
   }
 
   /**
@@ -593,16 +613,6 @@ class Core
   }
 
   /**
-   * Invia gli headers http
-   *
-   * @return boolean True se invia gli header False se sono già stati inviati
-   */
-  public function sendHttpHeaders()
-  {
-    throw new CoreException('Implementare la funzione');
-  }
-
-  /**
    * Dispatching della richiesta HTTP
    *
    * Questa funzione si occupa di inizializzare la richiesta, identificare la
@@ -613,13 +623,15 @@ class Core
   {
     if(!$this->getConfiguration()->isDebug())
     {
-      ob_start();     // il buffer inizia qui così gli startup errors del Core sono stampati sullo stdout
+      ob_start();
     }
 
-    Routing::initialize();
-    $route = Routing::matchCurrentRequest();
+      $this->request = Request::createFromPHP();
+      $this->response = new Response();
 
-    $this->initializeRequest($route);
+    $this->routing = new Routing();
+    $this->routing->loadRoutesFromFile(Config::get('application.dir') . '/config/routing.php');
+    $route = $this->routing->matchRequest($this->request);
 
     $this->forward($route->getController(), $route->getAction());
 
@@ -629,18 +641,7 @@ class Core
     }
   }
 
-  /**
-   * Inizializza l'applicazione in base alla Route data
-   *
-   * imposta i parametri della request ed inizializza il controller di pagina
-   *
-   */
-  public function initializeRequest(Route $route)
-  {
-    $this->setRequestParameters($route->getAllParameters());
 
-    //$this->controller_obj = $this->initializeController($route->getParam('p'), $route->getParam('module'));
-  }
 
   /**
    * Crea e ritorna il controller di pagina associato alla pagina
@@ -678,7 +679,7 @@ class Core
    *
    * @return Controller
    */
-  public function initializeController($controller, $action = null)
+  public function initializeController($controller)
   {
     $controllerClassName = ucfirst($this->configuration->getApplicationName()) . '\\Controller\\' . $controller;
 
@@ -718,30 +719,6 @@ class Core
     return $this->controller_obj;
   }
 
-  /**
-   * Inizializza la variabile globale _REQUEST
-   *
-   * @param array $params
-   */
-  public function setRequestParameters($params = array())
-  {
-    foreach($params as $name => $value)
-    {
-      $_REQUEST[$name] = $value;
-    }
-  }
-
-  /**
-   * esegue il controller di pagina
-   *
-   * Dopo l'inizializzazione del core e dell'applicazione questa funzione si occupa
-   * di iniziare la logica di business del controller identificato dalla route
-   */
-  public function execute()
-  {
-    throw new CoreException('"chi ha osato toccarmi?" Non esisto più, e se mi hai chiamato hai proprio sbagliato');
-  }
-
   public function shallRender()
   {
     return $this->renderView;
@@ -758,13 +735,13 @@ class Core
   {
     if($this->nbForwards > 5)
     {
-      throw new CoreException('Superato il limite massimo (5) di forward');
+      throw new \RuntimeException("Forward limit number '{$this->nbForwards}' reached");
     }
 
     $this->action = $action;
     $this->controller = $controller;
 
-    $this->controller_obj = $this->initializeController($controller, $action);
+    $this->controller_obj = $this->initializeController($controller);
 
     //Logger::info(sprintf('Core | forward | forwarding(%d) to "%s/%s"', $this->nbForwards, $module, $action));
 
@@ -793,31 +770,7 @@ class Core
    */
   public function redirect($route = '' , $cod = 302)
   {
-    Routing::redirect($route, $cod);
-  }
-
-  /**
-   * Aggiunge un componente web da caricare automaticamente
-   *
-   * Nota: componenti web definiti staticamente in content.ini
-   *
-   * @param string $name
-   */
-  public function addComponent($name)
-  {
-    throw new CoreException('Metodo non ancora implementato');
-  }
-
-  /**
-   * rimuove un componente web dall'esecuzione automatica
-   *
-   * Nota: componenti web definiti staticamente in content.ini
-   *
-   * @param string $name
-   */
-  public function removeComponent($name)
-  {
-    throw new CoreException('Metodo non ancora implementato');
+    $this->response->redirect($route, $cod);
   }
 
   /**
@@ -837,7 +790,7 @@ class Core
    */
   public function getEventDispatcher()
   {
-    return $this->event_dispatcher;
+    return $this->eventDispatcher;
   }
 
   // /**
@@ -910,6 +863,21 @@ class Core
 
     echo $renderer->render($this->renderer->variables);
   }
+
+    public function getRequest()
+    {
+        return $this->request;
+    }
+
+    public function getResponse()
+    {
+        return $this->response;
+    }
+
+    public function getRouting()
+    {
+        return $this->routing;
+    }
 
   /**
    * Aggiunge un javascript nel tag HEAD
@@ -1142,7 +1110,7 @@ class Core
 
     $this->renderer->addVariable('context', $this);
 
-    $this->event_dispatcher->dispatch('view.configure', new GenericEvent($this->renderer));
+    $this->eventDispatcher->dispatch('view.configure', new GenericEvent($this->renderer));
 
     $this->isViewInitialized = true;
   }
@@ -1158,7 +1126,7 @@ class Core
     $renderer = new $class(
         $this,
         $params,
-        $this->event_dispatcher);
+        $this->eventDispatcher);
 
     if(!($renderer instanceof \Core\View\View))
     {
@@ -1167,7 +1135,7 @@ class Core
 
     $renderer->setSuffix(''); // default suffix
 
-    $this->event_dispatcher->dispatch('view.configure', new GenericEvent($renderer));
+    $this->eventDispatcher->dispatch('view.configure', new GenericEvent($renderer));
 
     return $renderer;
   }
@@ -1175,7 +1143,7 @@ class Core
   /**
    * @return View
    */
-  public function getRenderer()
+  public function getView()
   {
     if(!$this->isViewInitialized)
     {

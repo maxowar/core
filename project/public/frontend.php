@@ -1,18 +1,11 @@
 <?php
 
-require_once '../../vendor/autoload.php';
+$loader = require '../../vendor/autoload.php';
+$loader->addPsr4('Frontend\\', dirname(dirname(__DIR__)) . '/project/apps');
 
-try
-{
-    $configuration = Core\Configuration\Project::getApplicationConfiguration('frontend', dirname(dirname(__FILE__)));
-    Core\Core::createInstance($configuration)->dispatch();
-}
-catch (Core\Exception $e)
-{
-    $e->printStackTrace();
-}
-catch (\Exception $e)
-{
-    Core\Exception\Exception::createFromException($e)->printStackTrace();
-}
+
+//$configuration = Core\Configuration\Project::getApplicationConfiguration('frontend', dirname(dirname(__FILE__)));
+
+$configuration = new \Frontend\Configuration\Configuration('prod');
+Core\Core::createInstance($configuration)->dispatch();
 

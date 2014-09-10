@@ -2,6 +2,7 @@
 
 namespace Core\Filter;
 use Symfony\Component\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\GenericEvent;
 
 /**
  * Rendering filter esegue la creazione e l'invio dell'output
@@ -22,7 +23,7 @@ class Rendering extends Filter
 
     // è il momento propizio per inviare gli headers ... hahaha non sono gestiti! hahah
     
-    $filterManager->dispatcher->getEventDispatcher()->dispatch('filter.rendering', new Event( array('filterManager' => $filterManager)));
+    $filterManager->context->getEventDispatcher()->dispatch('filter.rendering', new GenericEvent($filterManager));
 
     if($filterManager->getContext()->shallRender())
     {
@@ -41,7 +42,7 @@ class Rendering extends Filter
   {
     $cache = $event->getSubject();
 
-    if($cache->has(Core::getCurrentInstance()->getRenderer()->getId()))
+    if($cache->has(Core::getCurrentInstance()->getView()->getId()))
     {
       $this->send();
       
@@ -58,11 +59,11 @@ class Rendering extends Filter
   {
     if(!$filterManager)
     {
-      $renderer = Core::getCurrentInstance()->getRenderer();
+      $renderer = Core::getCurrentInstance()->getView();
     }
     else
     {
-      $renderer = $filterManager->getContext()->getRenderer();
+      $renderer = $filterManager->getContext()->getView();
     }
     
     // inizializzo automaticamente il template se questo non è stato inizializzato manualmente

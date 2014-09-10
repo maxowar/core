@@ -1,0 +1,38 @@
+<?php
+
+namespace Core\Util\Parameter;
+
+class Holder
+{
+    private $parameters;
+
+    public function __construct($parameters = array())
+    {
+        $this->parameters = $parameters;
+    }
+
+    public function set($key, $val, $namespace = null)
+    {
+        if($namespace) {
+            $this->parameters[$namespace][$key] = $val;
+        } else {
+            $this->parameters[$key] = $val;
+        }
+    }
+
+    public function get($key, $default = null, $namespace = null)
+    {
+        if($namespace) {
+            return isset($this->parameters[$namespace][$key]) ? $this->parameters[$namespace][$key] : $default;
+        } else {
+            return isset($this->parameters[$key]) ? $this->parameters[$key] : $default;
+        }
+    }
+
+    public function getAll($namespace = null)
+    {
+        if($namespace)
+            return $this->parameters[$namespace];
+        return $this->parameters;
+    }
+}

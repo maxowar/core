@@ -48,7 +48,7 @@ class ApplicationDisabledException extends CoreException
   {
     $template = 'maintenance.html.php';
 
-    $path = is_readable(Config::get('MAIN/base_path') . '/lib/exception/data/' . $template) ? Config::get('MAIN/base_path') . '/lib/exception/data/' . $template : Config::get('MAIN/core_path') . '/lib/exception/data/' . $template;
+    $path = is_readable(Config::get('application.dir') . '/lib/exception/data/' . $template) ? Config::get('application.dir') . '/lib/exception/data/' . $template : Config::get('MAIN/core_path') . '/lib/exception/data/' . $template;
 
     if (!is_null($path) && is_readable($path))
     {

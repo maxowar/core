@@ -2,101 +2,49 @@
 
 namespace Core\Controller;
 
+use Core\Core;
+use Core\Http\Response;
+use Core\Util\Utility;
+
 /**
  * Rappreseta il controller della pagina
  *
- * Qui avviene la logica di business che lega il Model (che in questa applicazione si è perso)
- * e la View del paradigma MVC
- *
- * @method View    getRenderer()
- * @method Session getSession()
- * @method string  getActionName() Ritorna il nome della action attuale
- * @method string  getModuleName() Ritorna il nome del modulo attuale
  *
  * @author Massimo Naccari
  * @package core
  * @subpackage controller
  */
-class Controller
+abstract class Controller
 {
 
-  /**
-   * il dispatcher delle request per retrocompatibilità con codice vecchio scritto negli oggetti Controller
-   *
-   * @var Core
-   */
-	protected $index;
-	
+    private $viewVariables;
+
 	/**
 	 *
 	 * @var Core
 	 */
-	protected $dispatcher;
-
-	/**
-	 * Il nome del tipo dell'istanza corrente
-	 *
-	 * @var string
-	 */
-	protected $class_name;
+	protected $context;
 
   /**
    *
-   * @param Core  $idx Referenza al dispatcher
-   * @param resource    $dbh Connessione db
-   * @param string      $t
-   * @param string      $k
-   * @param string      $d
+   * @param Core  $context
    */
-	public function __construct($idx = null, $dbh = null, $t = null, $k = null, $d = null)
+	public function __construct(Core $context)
 	{
-    $this->index = $this->dispatcher = Core::getCurrentInstance();
+        $this->context = $context;
+        $this->viewVariables = array();
 
-		$this->class_name = get_class($this);
-
-    $this->table_name   = $t;
-    $this->data_record  = $d;
-    $this->key_name     = $k;
-
-    $this->configure();
+        $this->configure();
 	}
 
-	public function configure()
+	protected  function configure()
 	{
 
 	}
 
-	/**
-	 * I metodi non definiti negli oggetti Controller vengono verificati ed eventualmente eseguiti
-	 * nell'oggetto dispatcher Core
-	 *
-	 * @author Massimo Naccari
-	 *
-	 * @param string $method
-	 * @param array $args
-	 */
-	public function __call($method, $args)
+	public function log($msg, $level = 7)
 	{
-	  if(method_exists($this->dispatcher, $method))
-	  {
-	    return call_user_func_array(array($this->dispatcher, $method), $args);
-	  }
-	  throw new CoreException(sprintf('Impossibile risolvere il metodo "%s::%s()"', get_class($this), $method));
-	}
-
-	public function execute()
-	{
-		throw new CoreException('Il metodo Controller::execute() non è definito');
-	}
-
-	public function logger($msg, $level = 7)
-	{
-		$this->dispatcher->logger($this->class_name." | ".$msg,$level);
-	}
-
-	public function getIniAttributes($room,$key)
-	{
-		return Config::get($room . '/' . $key);
+		$this->context->logger($this->class_name." | ".$msg,$level);
 	}
 
 	/**
@@ -106,20 +54,9 @@ class Controller
 	 * @param string $room
 	 * @return void
 	 */
-	public function addData($d, $room = null)
-	{
-		if($room == null)
-		{
-		  $room = $this->class_name;
-		}
-		$this->dispatcher->data[$room] = $d;
-
-    $this->addVar($room, $d);
-	}
-
 	public function addVar($key, $value)
 	{
-    $this->dispatcher->getRenderer()->addVariable($key, $value);
+        $this->context->getView()->addVariable($key, $value);
 	}
 
   /**
@@ -139,8 +76,7 @@ class Controller
    */
   public function __set($key, $value)
   {
-    $this->$key = $value;
-    $this->dispatcher->getEventDispatcher()->notify(new sfEvent($this, 'controller.unknown_field', array($key, $value)));
+    $this->viewVariables[$key] = $value;
   }
 
   /**
@@ -158,39 +94,18 @@ class Controller
    */
   public function & __get($key)
   {
-    return $this->dispatcher->getRenderer()->getVariable($key);
+    return $this->viewVariables[$key];
   }
 
-	public function clearData($room=null)
+	public function getContext()
 	{
-		if ($room==null) $room=$this->class_name;
-		unset($this->dispatcher->data[$room]);
+		return $this->context;
 	}
 
-	public function getData($room=null)
-	{
-		if ($room==null) $room=$this->class_name;
-		if (isset($this->dispatcher->data[$room]))
-			return ($this->dispatcher->data[$room]);
-	}
-
-	public function getIndex()
-	{
-	  $e = new Exception();
-	  $trace = $e->getTrace();
-	  Logger::log(sprintf('Controller | getIndex | Deprecated called in File: %s(%d) %s::%s', $trace[1]['file'], $trace[1]['line'], $trace[1]['class'], $trace[1]['function']), Logger::WARNING);
-	  
-		return $this->dispatcher;
-	}
-	
-	public function getDispatcher()
-	{
-	  return $this->dispatcher;
-	}
 
 	public function setView($name="")
 	{
-		$this->dispatcher->setView($name);
+		$this->context->setView($name);
 	}
 
   /**
@@ -204,7 +119,7 @@ class Controller
    */
   public function getRequestParameter($param, $default = null)
   {
-    return $this->dispatcher->getRequestParameter($param, $default);
+    return $this->context->getRequestParameter($param, $default);
   }
 
   /**
@@ -217,19 +132,7 @@ class Controller
    */
   public function setRequestParameter($param, $value = null)
   {
-      return $this->dispatcher->setRequestParameter($param, $value);
-  }
-
-  /**
-   * Ritorna l'istanza del frontcontroller
-   *
-   * @author Massimo Naccari
-   *
-   * @return Core
-   */
-  public function getFrontController()
-  {
-    return $this->dispatcher;
+      return $this->context->setRequestParameter($param, $value);
   }
 
   /**
@@ -243,25 +146,7 @@ class Controller
   public function initComponent($controllerName)
   {
     Core::loadController($controllerName);
-    return new $controllerName($this->dispatcher, $this->getConnection(), $this->contentIni[$page]['COD']);
-  }
-
-  /**
-   * Pre-esegue tutti i componenti web considerati necessari a priori e definiti nel file content.ini
-   *
-   * La funzione deve essere chiamata esplicitamente all'interno dei controller di pagina
-   *
-   * @author Massimo Naccari
-   *
-   * @return void
-   */
-  public function executeContentControllers()
-  {
-    $nbContentControllers = count($this->contentIni[$this->pagecode]['BLOCKLIST']);
-    for($i = 0; $i < $nbContentControllers; $i ++)
-    {
-      $this->getFrontController()->initializeController($this->contentIni[$this->pagecode]['BLOCKLIST'][$i])->execute();
-    }
+    return new $controllerName($this->context, $this->getConnection(), $this->contentIni[$page]['COD']);
   }
 
   /**
@@ -272,9 +157,9 @@ class Controller
    * @param string $action
    * @param string $module
    */
-  public function forward($action, $module = null)
+  public function forward($controller, $action)
   {
-    $this->getFrontController()->forward($action, $module);
+    $this->context->forward($controller, $action);
   }
 
 
@@ -282,12 +167,29 @@ class Controller
    * Proxy-method per {@link Core::forward()}
    *
    *
-   * @param mixed $route
+   * @param string|\Core\Routing\Route\Route $route
    * @param string cod
    */
-  public function redirect($route , $cod = 302)
+  public function redirect($uri , $cod = 302)
   {
-      $this->getFrontController()->redirect($route , $cod );
+      $uri = '/';
+      // route name
+      if(is_string($uri) && !Utility::isAbsolutePath($uri) && !Utility::isValidUri($uri))
+      {
+          $route = $this->context->getRouting()->get($uri);
+      }
+
+      // route object
+      if($uri instanceof Route)
+      {
+          $uri = $uri->createUrl();
+      }
+      // nothing good
+      else
+      {
+          throw new \Exception('$route must be a valid url, string route name or Route obj');
+      }
+      $this->context->getResponse()->redirect($uri, $cod);
   }
 
   /**
@@ -332,12 +234,8 @@ class Controller
     throw new PageNotFoundException($message);
   }
 
-  /**
-   * Controlla l'azione HTTP corrente
-   */
-  public function isPost()
-  {
-    return Routing::getRequestMethod() == Routing::POST;
-  }
+    public function render($response)
+    {
 
+    }
 }

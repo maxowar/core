@@ -23,7 +23,7 @@ class PageNotFound extends Exception
   {
     parent::__construct($message, $code, $previous);
 
-    if(!Config::get('LOG/debug'))
+    if(!Config::get('application.debug'))
     {
       $this->sendHttpHeaders();
       Core::getCurrentInstance()->forward404($message);

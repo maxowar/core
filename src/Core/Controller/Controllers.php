@@ -36,7 +36,7 @@ abstract class Controllers extends Controller
       throw new CoreException(sprintf('L\'action "%s" per il modulo "%s" non esiste', $action, $this->index->getRequestParameter('module')));
     }
 
-    if(Config::get('LOG/debug', false))
+    if(Config::get('application.debug', false))
     {
       Logger::info(sprintf('Controller | Esecuzione action "%s" del modulo "%s"', Core::getCurrentInstance()->getActionName(), Core::getCurrentInstance()->getModuleName()));
     }
@@ -55,13 +55,5 @@ abstract class Controllers extends Controller
 
     return $this->$actionMethod();
   }
-  
-  /**
-   * @return User
-   */
-  protected function getUser()
-  {
-    return $this->getSession()
-        ->getUser();
-  }
+
 }

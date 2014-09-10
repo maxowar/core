@@ -3,6 +3,8 @@
 namespace Core\Configuration;
 
 use Core\Util\Config;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Debug\ExceptionHandler as Exeption;
 
 /**
  * Amministra l'inizializzazione delle configurazioni dell'intero progetto
@@ -13,7 +15,7 @@ use Core\Util\Config;
  * @subpackage config
  *
  */
-class Project
+abstract class Project
 {
   /**
    * il nome dell'applicazione
@@ -36,18 +38,31 @@ class Project
    */
   protected $rootDir;
 
+    /**
+     * @var \Symfony\Component\EventDispatcher\EventDispatcher
+     */
+    protected $eventDispatcher;
+
+    protected $environment;
+
   /**
    * Costruttore astratto
    *
    * Si occupa di inizializzare tutte le configurazioni del sistema
    */
-  public function __construct($application, $rootDir)
+  public function __construct($environment)
   {
-    $this->application  = $application;
-    $this->rootDir      = $rootDir;
+      $this->environment = $environment;
+
+    $this->application  = $this->getApplicationName();
     $this->cliExecution = false;
+      $this->rootDir = $this->guessRootDir();
 
     $this->loadConstants();
+
+    $this->eventDispatcher = new EventDispatcher();
+
+    Exeption::register();
 
     //$this->loadLogger();
 
@@ -56,6 +71,11 @@ class Project
     //$this->loadPhpConfiguration();
   }
 
+    public function getEventDispatcher()
+    {
+        return $this->eventDispatcher;
+    }
+
   /**
    * Inizializza il sitema di logging
    */
@@ -63,7 +83,7 @@ class Project
   {
     // inizializza logger
     Logger::setOptions(array('filter_level' => Config::get('LOG/level'),
-                             'log_dir'      => Config::get('LOG/dir', Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . $this->application),
+                             'log_dir'      => Config::get('LOG/dir', Config::get('application.dir') . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . $this->application),
                              'late_write'   => Config::get('LOG/late_write', true)
     ));
   }
@@ -82,7 +102,7 @@ class Project
     }
     Config::add(parse_ini_file($configurationFileName, true));
     
-    Config::set('MAIN/base_path', $this->getRootDir());
+    Config::set('application.dir', $this->getRootDir());
     
     if(!Config::get('MAIN/document_root'))
     {
@@ -113,9 +133,9 @@ class Project
     if(!$cache->has('php.ini'))
     {
       $options = array();
-      if(file_exists(Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'ini' . DIRECTORY_SEPARATOR . 'php.ini'))
+      if(file_exists(Config::get('application.dir') . DIRECTORY_SEPARATOR . 'ini' . DIRECTORY_SEPARATOR . 'php.ini'))
       {
-        $options = parse_ini_file(Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'ini' . DIRECTORY_SEPARATOR . 'php.ini', true);
+        $options = parse_ini_file(Config::get('application.dir') . DIRECTORY_SEPARATOR . 'ini' . DIRECTORY_SEPARATOR . 'php.ini', true);
       }
       else
       {
@@ -129,7 +149,7 @@ class Project
       $options = unserialize($cache->get('php.ini', array()));
     }
 
-    $options = Config::get('LOG/debug') ? (isset($options['dev']) ? $options['dev'] : array()) : (isset($options['prod']) ? $options['prod'] : array());
+    $options = Config::get('application.debug') ? (isset($options['dev']) ? $options['dev'] : array()) : (isset($options['prod']) ? $options['prod'] : array());
 
     foreach($options as $varname => $varvalue)
     {
@@ -153,10 +173,7 @@ class Project
    *
    * @return string
    */
-  public function getApplicationName()
-  {
-    return $this->application;
-  }
+  abstract public function getApplicationName();
 
   /**
    * Indovina la root-dir del progetto considerando l'installazione del Core framework allìinterno
@@ -172,10 +189,9 @@ class Project
    *
    * @return string The project root directory
    */
-  static public function guessRootDir()
+  public function guessRootDir()
   {
-    $r = new \ReflectionClass('Core\Configuration\Project');
-
+    $r = new \ReflectionClass(get_class($this));
     return realpath(dirname($r->getFileName()).'/../../..');
   }
 

@@ -26,13 +26,13 @@ class PHP extends Session
 
     if(!session_start())
     {
-      Logger::log('PhpSession | initialize | Impossibile inizializzare la sessione', Logger::WARNING);
+      //Logger::log('PhpSession | initialize | Impossibile inizializzare la sessione', Logger::WARNING);
     }
     else
     {
       $this->is_started = true;
       $this->id = session_id();
-      Logger::log('PhpSession | initialize | Sessione "' . $params['name'] . '" inizializzata correttamente. id: ' . $this->id, Logger::NOTICE);
+      //Logger::log('PhpSession | initialize | Sessione "' . $params['name'] . '" inizializzata correttamente. id: ' . $this->id, Logger::NOTICE);
 
       $this->ttl = $params['ttl'];
       
@@ -66,21 +66,21 @@ class PHP extends Session
       $remote_address = $_SERVER['REMOTE_ADDR'];
       if($remote_address != $this->getAttribute('remoteaddress', null, 'user'))
       {
-        throw new SessionException('Remote address cambiato. Possibile hacking.');
+        throw new \Exception('Remote address cambiato. Possibile hacking.');
       }
 
       // l'identificativo dello user agent è invariato (session hijacking)
       $user_agent = $_SERVER['HTTP_USER_AGENT'];
       if($user_agent != $this->getAttribute('useragent', null, 'user'))
       {
-        throw new SessionException('User agent cambiato. Possibile hacking.');
+        throw new \Exception('User agent cambiato. Possibile hacking.');
       }
 
       return true;
     }
     else
     {
-      Config::get('LOG/debug') && Logger::debug(sprintf('PhpSession | isAuthenticated | sessione scaduta'));
+      //Config::get('application.debug') && Logger::debug(sprintf('PhpSession | isAuthenticated | sessione scaduta'));
 
       if(!$this->destroyed)
       {

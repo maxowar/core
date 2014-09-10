@@ -137,32 +137,20 @@ class Route implements RouteInterface
    *
    * @return string
    */
-  public function getPage()
+  public function getAction()
   {
-    return Core::parseControllerFileName($this->params['p']);
+    return $this->params['_action'];
   }
 
   /**
    * Imposta il nome della action
    *
-   * imposta il parametro "p" della request
-   *
    * @param string $page
    * @return void
    */
-  public function setPage($page)
+  public function setAction($action)
   {
-    $this->params['p'] = Core::parseControllerFileName($page);
-  }
-
-  public function getZone($default = null)
-  {
-    return $this->getParam('z', $default);
-  }
-
-  public function getOper($default = null)
-  {
-    return $this->getParam('o', $default);
+    $this->params['_action'] = $action;
   }
 
   /**
@@ -214,7 +202,7 @@ class Route implements RouteInterface
   {
     if(strpos($this->url, '/') != 0)
     {
-      throw new RoutingException(sprintf('La URL della route "%s" non inizia con lo "/"', $this->name));
+      throw new \Exception(sprintf('La URL della route "%s" non inizia con lo "/"', $this->name));
     }
 
     preg_match_all('%([^/.]+)%i', $this->url, $tokens, PREG_PATTERN_ORDER);
@@ -767,12 +755,7 @@ class Route implements RouteInterface
   }
   
   public function getParamsForCache(){}
-  
-  public function getAction()
-  {
-    return $this->getParam('_action');
-  }
-  
+
   public function getController()
   {
     return $this->getParam('_controller');

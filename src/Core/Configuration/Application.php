@@ -55,9 +55,9 @@ class Application extends Project
 
   private $debug;
 
-  public function __construct($application, $rootDir)
+  public function __construct($environment)
   {
-    parent::__construct($application, $rootDir);
+    parent::__construct($environment);
 
     $this->debug = false;
 
@@ -68,12 +68,17 @@ class Application extends Project
     $this->initialize();
   }
 
+    public function getApplicationName()
+    {
+        return get_class($this);
+    }
+
   private function initConfiguration()
   {
-    if(Config::get('APP/disable_application', false) &&
+    if(Config::get('application.disabled', false) &&
        php_sapi_name() != 'cli')
     {
-      throw new \Exception(Config::get('APP/maintenance_end_time'));
+      throw new \Exception(Config::get('application.maintenance_end_time'));
     }
 
     // gestione directory (domini) applicazione (solo per request HTTP)
@@ -94,23 +99,17 @@ class Application extends Project
     // inizializza path di default dell'applicazione
     $this->paths = array(
       array(
-        Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'apps' . DIRECTORY_SEPARATOR . ucfirst($this->getApplicationName()) . DIRECTORY_SEPARATOR .
-            'Controller',
-        Config::get('MAIN/core_path') . DIRECTORY_SEPARATOR . 'controller'
+        Config::get('application.dir') . '/apps/' . ucfirst($this->getApplicationName()) . '/Controller'
       ),
       array(
-          Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'apps' . DIRECTORY_SEPARATOR . ucfirst($this->getApplicationName()) . DIRECTORY_SEPARATOR .
-                'View'),
-      Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'config',
-      Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'lib' 
+          Config::get('application.dir') . '/apps/' . ucfirst($this->getApplicationName()) . '/View'
+      ),
+      array(
+          Config::get('application.dir') . '/config'
+      )
     );
 
-    // regole di routing dell'applicazione
-    file_exists($this->getApplicationPath(self::PATH_CONFIG) .  DIRECTORY_SEPARATOR . 'routing.php') ?
-      Routing::loadRoutesFromFile($this->getApplicationPath(self::PATH_CONFIG) . '/routing.php', Routing::PREPEND) :
-      null;
-
-    $this->debug = Config::get('LOG/debug');
+    $this->debug = Config::get('application.debug');
   }
 
   /**

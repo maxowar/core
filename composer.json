@@ -8,6 +8,7 @@
         {"name": "Maxowar"}
     ],
     "require": {
+        "symfony/dependency-injection" : "2.5.*",
         "symfony/event-dispatcher": "2.5.*",
         "symfony/console": "2.5.*",
         "symfony/debug": "2.5.*",

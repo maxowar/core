@@ -1,5 +1,7 @@
 <?php
 
+namespace Core\Util;
+
 function array_insert($array, $var, $position)
 {
   $before = array_slice($array, 0, $position);
@@ -116,7 +118,7 @@ class Utility
   	  $message->addPart($bodyHtml, 'text/html');
   	}
   	
-  	if(Config::get('LOG/debug'))
+  	if(Config::get('application.debug'))
   	{
   	  Logger::debug(sprintf('Utility | sendMail | from: %s <%s>', $fromName, $fromEmail));
   	  Logger::debug(sprintf('Utility | sendMail | to: %s <%s>', $toName, $toEmail));
@@ -386,7 +388,7 @@ class Utility
                 5,
                 20,
                 imagecolorallocate($image, 0x63, 0x63, 0x63),
-                Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'doc/arial.ttf',
+                Config::get('application.dir') . DIRECTORY_SEPARATOR . 'doc/arial.ttf',
                 $captcha);
     imagettftext($image,
                 16,
@@ -394,7 +396,7 @@ class Utility
                 6,
                 21,
                 imagecolorallocate($image, 0xAA, 0xAA, 0xAA),
-                Config::get('MAIN/base_path') . DIRECTORY_SEPARATOR . 'doc/arial.ttf',
+                Config::get('application.dir') . DIRECTORY_SEPARATOR . 'doc/arial.ttf',
                 $captcha);
 
     imageline($image, 0, 12, 80, 12, imagecolorallocatealpha($image, 0x66, 0x66, 0x66, 100));

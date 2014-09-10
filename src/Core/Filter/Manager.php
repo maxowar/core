@@ -21,7 +21,7 @@ class Manager
    *
    * @var Core
    */
-  public $dispatcher;
+  public $context;
 
   protected
     $chain = array(),
@@ -33,7 +33,7 @@ class Manager
    */
   public function __construct(Core $dispatcher)
   {
-    $this->dispatcher = $dispatcher;
+    $this->context = $dispatcher;
   }
   
   public function reset()
@@ -46,7 +46,7 @@ class Manager
    */
   public function getContext()
   {
-    return $this->dispatcher;
+    return $this->context;
   }
 
   /**
@@ -65,11 +65,11 @@ class Manager
     {
       if(!$cache->has('filter'))
       {
-        if(!is_readable(Config::get('MAIN/base_path') . '/ini/filter.ini'))
+        if(!is_readable(Config::get('application.dir') . '/ini/filter.ini'))
         {
           throw new \RuntimeException('Impossibile trovare il file filter.ini');
         }
-        $data = parse_ini_file(Config::get('MAIN/base_path') . '/ini/filter.ini', true);
+        $data = parse_ini_file(Config::get('application.dir') . '/ini/filter.ini', true);
   
         $cache->set('filter', $data);
       }
@@ -92,7 +92,7 @@ class Manager
 
     if ($this->index < count($this->chain))
     {
-      if(Config::get('LOG/debug', false))
+      if(Config::get('application.debug', false))
       {
         //Logger::debug('FilterManager | execute | esecuzione del filtro "' . get_class($this->chain[$this->index]) . '"');
       }

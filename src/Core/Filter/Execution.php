@@ -28,7 +28,15 @@ class Execution extends Filter
     //Logger::info(sprintf('ExecutionFilter | execute | Execute controller "%s/%s"', $dispatcher->getModuleName(), $dispatcher->getActionName()));
     
     // esecuzione della logica business del controller
-    $res = $dispatcher->getController()->execute();
+    $res = $dispatcher->getController()->execute($filterManager->context->getRequest(), $filterManager->context->getResponse());
+
+      if(is_string($res)) {
+          // set body response to $res
+      } elseif (is_array($res)) {
+          $filterManager->context->getView()->addVariables($res);
+      } else {
+          throw new \InvalidArgumentException('Invalid Controller return value');
+      }
     
     // post-execute
     if(method_exists($dispatcher->getController(), 'postExecute'))

@@ -55,7 +55,7 @@ class PHP extends View
       return call_user_func_array(array($this->context, $method), $parameters);
     }
 
-    throw new RuntimeException("Metodo PHPView::$method() sconosciuto");
+    throw new \RuntimeException("Metodo PHPView::$method() sconosciuto");
   }
 
   public function __get($key)

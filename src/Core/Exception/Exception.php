@@ -84,7 +84,7 @@ class Exception extends \Exception
     $this->sendHttpHeaders();
 
     // send an error 500 if not in debug mode
-    if (!Config::get('LOG/debug'))
+    if (!Config::get('application.debug'))
     {
       if ($template = $this->getTemplatePathForError(false))
       {
@@ -172,8 +172,8 @@ class Exception extends \Exception
   {
     $template = sprintf('%s.html.php', $debug ? 'exception' : 'error');
 
-    $path = is_readable(Config::get('MAIN/base_path') . '/lib/exception/data/' . $template) ?
-            Config::get('MAIN/base_path') . '/lib/exception/data/' . $template :
+    $path = is_readable(Config::get('application.dir') . '/lib/exception/data/' . $template) ?
+            Config::get('application.dir') . '/lib/exception/data/' . $template :
             Config::get('MAIN/core_path') . '/Exception/data/' . $template;
 
     if (!is_null($path) && is_readable($path))
