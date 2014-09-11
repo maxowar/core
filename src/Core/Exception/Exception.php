@@ -108,7 +108,7 @@ class Exception extends \Exception
     $name    = get_class($exception);
     $traces  = self::getTraces($exception, 0 == strncasecmp(PHP_SAPI, 'cli', 3) ? 'plain' : 'html');
 
-    $route = Routing::getCurrentRequestRoute();
+    $route = Routing::getMatchedRoute();
 
     if(Core::getCurrentInstance())
     {

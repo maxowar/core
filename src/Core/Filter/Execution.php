@@ -17,18 +17,18 @@ class Execution extends Filter
     // eseguo un eventuale altro filtro
     $filterManager->execute();
     
-    $dispatcher = $filterManager->getContext();
+    $context = $filterManager->getContext();
     
-    // pre-execute
-    if(method_exists($dispatcher->getController(), 'preExecute'))
+    // pre-execute @todo spostare in Core. Decidere se usare hook o eventi o basta Controller::configure()
+    if(method_exists($context->getController(), 'preExecute'))
     {
-      $dispatcher->getController()->preExecute();
+      $context->getController()->preExecute();
     }
     
     //Logger::info(sprintf('ExecutionFilter | execute | Execute controller "%s/%s"', $dispatcher->getModuleName(), $dispatcher->getActionName()));
     
     // esecuzione della logica business del controller
-    $res = $dispatcher->getController()->execute($filterManager->context->getRequest(), $filterManager->context->getResponse());
+    $res = $context->handle();
 
       if(is_string($res)) {
           // set body response to $res
@@ -39,14 +39,14 @@ class Execution extends Filter
       }
     
     // post-execute
-    if(method_exists($dispatcher->getController(), 'postExecute'))
+    if(method_exists($context->getController(), 'postExecute'))
     {
-      $dispatcher->getController()->postExecute();
+      $context->getController()->postExecute();
     }
 
     if($res === false)
     {
-      $dispatcher->renderWithoutView();
+      $context->renderWithoutView();
     }
   }
 }

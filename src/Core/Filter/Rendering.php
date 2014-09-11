@@ -23,7 +23,7 @@ class Rendering extends Filter
 
     // è il momento propizio per inviare gli headers ... hahaha non sono gestiti! hahah
     
-    $filterManager->context->getEventDispatcher()->dispatch('filter.rendering', new GenericEvent($filterManager));
+
 
     if($filterManager->getContext()->shallRender())
     {
@@ -32,39 +32,19 @@ class Rendering extends Filter
     
     exit(0);
   }
-  
-  /**
-   * Quando viene abilitata la cache della View e c'è un cache hit invia l'output e blocca l'esecuzione
-   * 
-   * @param Event $event
-   */
-  public function listenToViewCacheEnable(Event $event)
-  {
-    $cache = $event->getSubject();
 
-    if($cache->has(Core::getCurrentInstance()->getView()->getId()))
-    {
-      $this->send();
-      
-      exit(0);
-    }
-  }
-  
   /**
    * Invia l'output al client
    * 
    * @param unknown_type $filterManager
    */
-  public function send($filterManager = null)
+  public function send($filterManager)
   {
-    if(!$filterManager)
-    {
-      $renderer = Core::getCurrentInstance()->getView();
-    }
-    else
-    {
-      $renderer = $filterManager->getContext()->getView();
-    }
+
+    $renderer = $filterManager->getContext()->getView();
+
+      $filterManager->context->getEventDispatcher()->dispatch('filter.rendering', new GenericEvent($renderer));
+
     
     // inizializzo automaticamente il template se questo non è stato inizializzato manualmente
     if(!$renderer->getTemplate())

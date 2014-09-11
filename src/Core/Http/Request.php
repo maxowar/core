@@ -2,6 +2,11 @@
 
 namespace Core\Http;
 
+/**
+ * Base rapresentation of a HTTP request
+ *
+ * @package Core\Http
+ */
 class Request
 {
     const METHOD_HEAD    = 'HEAD';
@@ -16,17 +21,40 @@ class Request
     const METHOD_CONNECT = 'CONNECT';
 
 
-
+    /**
+     * @var array
+     */
     protected $data;
 
+    /**
+     * @var array
+     */
     protected $query;
 
+    /**
+     * @var array
+     */
     protected $files;
 
+    /**
+     * @var array
+     */
     protected $cookies;
 
+    /**
+     * @var array
+     */
     protected $server;
 
+    /**
+     * build a Request instance
+     *
+     * @param null $query
+     * @param null $data
+     * @param null $files
+     * @param null $cookies
+     * @param null $server
+     */
     public function __construct($query = null, $data = null, $files = null, $cookies = null, $server = null)
     {
         $this->initialize($query, $data, $files, $cookies, $server);
@@ -55,21 +83,50 @@ class Request
         return new self($_GET, $_POST, self::convertFileInformation($_FILES), $_COOKIE, $_SERVER);
     }
 
-    public function getData()
+    /**
+     * return POST data
+     *
+     * @param null $key
+     * @return mixed
+     */
+    public function getData($key = null)
     {
+        if($key)
+        {
+            return $this->data[$key];
+        }
         return $this->data;
     }
 
-    public function getQuery()
+    /**
+     * return GET data
+     *
+     * @return mixed
+     */
+    public function getQuery($key)
     {
+        if($key)
+        {
+            return $this->query[$key];
+        }
         return $this->query;
     }
 
+    /**
+     * return the hostname or servername
+     *
+     * @return mixed
+     */
     public function getHost()
     {
         return $this->server['HTTP_HOST'] ? $this->server['HTTP_HOST'] : $this->server['SERVER_NAME'];
     }
 
+    /**
+     * return the Uri
+     *
+     * @return mixed
+     */
     public function getUri()
     {
         return $_SERVER['REQUEST_URI'];

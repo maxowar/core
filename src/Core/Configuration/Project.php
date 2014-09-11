@@ -272,4 +272,11 @@ abstract class Project
     return new $class($application, $rootDir);
   }
 
+    public function enablePlugin($name)
+    {
+        $plugin = new $name();
+
+        $plugin->initialize($this);
+    }
+
 }

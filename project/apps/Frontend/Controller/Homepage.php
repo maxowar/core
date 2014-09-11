@@ -10,11 +10,10 @@ class Homepage extends Controller
 {
     protected function configure()
     {
-        //$this->getView()->getAsset()->addCss();
-        //$this->getView()->getAsset()->addCss();
+        $this->context->getView()->decorate('Layouts/layout');
     }
 
-    public function execute(Request $request, Response $response)
+    public function index(Request $request, Response $response)
     {
         $name = 'Massimo';
 

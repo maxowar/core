@@ -241,7 +241,7 @@ class Routing
   {
     if($this->currentRoute instanceof Route)
     {
-      return $this->$currentRoute;
+      return $this->currentRoute;
     }
 
     if(false !== $route = $this->parse($request->getUri()))
@@ -313,9 +313,9 @@ class Routing
    *
    * @return Route
    */
-  public static function getCurrentRequestRoute()
+  public function getMatchedRoute()
   {
-    return self::$currentRoute;
+    return $this->currentRoute;
   }
 
   /**

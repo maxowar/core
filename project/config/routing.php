@@ -15,6 +15,11 @@ return array(
         'params' => array('_controller' => 'Security', '_action' => 'signout'),
     )),
 
+    new Route('who', array(
+        'url' => '/who/:name',
+        'params' => array('_controller' => 'StaticContent', '_action' => 'who', 'extra' => 'val'),
+    )),
+
     new Route('static_content', array(
         'url' => '/:_action',
         'params' => array('_controller' => 'StaticContent'),
@@ -23,11 +28,7 @@ return array(
     new Route('home', array(
         'url' => '/',
         'params' => array('_controller' => 'Homepage'),
-    )),
-/*
-    new Route(Routing::GENERIC_ROUTE_NAME, array(
-              'url'     => '/:_controller/:_action/*'
-    ))*/
+    ))
 );
 
 

@@ -28,12 +28,12 @@ use Core\Util\Config;
  */
 class Route implements RouteInterface
 {
-  /**
-   * default extension
-   *
-   * @var string
-   */
-  public static $extension = '';
+    const TOKEN_TEXT = 'text';
+    const TOKEN_VARIABLE = 'variable';
+    const TOKEN_STAR = 'star';
+    //const TOKEN_SEPARATOR = 'separator';
+
+    const DEFAULT_SEPARATOR = '/.';
 
   protected $params = array();
   
@@ -45,7 +45,9 @@ class Route implements RouteInterface
           $isDir = false,
           $requirements;
 
-    private $reserved_variable_name = array('_controller', '_action', '_format');
+    private $reserved_variable_name = array('_controller', '_action', '_format', '_qsa');
+
+    protected $options;
 
   /**
    * Crea una nuova route e la inizializza con i parametri passati in <var>$parameters</var>
@@ -59,6 +61,7 @@ class Route implements RouteInterface
    *
    * @param $name       Nome della route
    * @param $parameters Parametri della route
+   * @param $options
    */
   public function __construct($name, $parameters = array())
   {
@@ -104,7 +107,7 @@ class Route implements RouteInterface
     // setting della default action per un modulo
     if(!array_key_exists('_action', $this->params))
     {
-      $this->params['_action'] = 'execute';
+      $this->params['_action'] = 'index';
     }
 
     $this->requirements = isset($parameters['requirements']) ? $parameters['requirements'] : array();
@@ -205,7 +208,7 @@ class Route implements RouteInterface
       throw new \Exception(sprintf('La URL della route "%s" non inizia con lo "/"', $this->name));
     }
 
-    preg_match_all('%([^/.]+)%i', $this->url, $tokens, PREG_PATTERN_ORDER);
+    preg_match_all('%([^' . self::DEFAULT_SEPARATOR . ']+)%i', $this->url, $tokens, PREG_PATTERN_ORDER);
     $tokens = $tokens[0];
 
     foreach($tokens as $token)
@@ -236,14 +239,6 @@ class Route implements RouteInterface
     if(strrpos($this->url, '/') == strlen($this->url) - 1)
     {
       $this->isDir = true;
-    }
-    // richiesta estensione
-    // E
-    // l'ultimo token non è uno star E nemmeno un token variabile il cui valore è "format"
-    else if(Config::get('ROUTING/extension') &&
-            $this->tokens[count($this->tokens) - 1]['value'] != 'format')
-    {
-      $this->tokens[] = array('type' => 'text', 'value' => self::$extension); // viene aggiunto un token di tipo stringa che rappresenta l'estensione
     }
   }
 
@@ -280,19 +275,9 @@ class Route implements RouteInterface
     $extension = $this->getExtension($urlParts['path']);
     $path = $urlParts['path'];
 
-    if(Config::get('ROUTING/extension') && !$extension && !$this->isDir)
-    {
-      // in questo punto non posso lanciare tale eccezzione
-      // significa solo che la regola non combacia con l'URL
-      //throw new RoutingException(sprintf('Estensione mancante'));
-      // quindi ritorniamo false
-
-      //return false;
-    }
-
     //Logger::debug('Route | matchesUrl | matching route "' . $this->name . '"');
 
-    preg_match_all('%([^/.]+)%i', $path, $urlTokens, PREG_PATTERN_ORDER);
+    preg_match_all('%([^' . self::DEFAULT_SEPARATOR . ']+)%i', $path, $urlTokens, PREG_PATTERN_ORDER);
     $urlTokens = $urlTokens[0];
 
     $it1 = new \ArrayIterator($urlTokens);
@@ -523,9 +508,9 @@ class Route implements RouteInterface
 
     $ary = array();
 
-    if(empty($parameters['p']) && !empty($parameters['module']))
+    if(empty($parameters['_action']))
     {
-      $parameters['p'] = 'index';
+      $parameters['_action'] = 'index';
     }
 
     // variable token
@@ -549,7 +534,7 @@ class Route implements RouteInterface
     {
       $url = str_replace('/*', '', $url);
 
-      $skipParameters = array('module', 'p', 'query_string');
+      $skipParameters = array('_controller', '_action', '_format', '_qsa');
 
       foreach($parameters as $parameter => $value)
       {
@@ -558,29 +543,24 @@ class Route implements RouteInterface
           continue;
         }
 
-        if(in_array($parameter, $skipParameters)) continue;
+        if(in_array($parameter, $this->reserved_variable_name)) continue;
 
         $url .= sprintf('/%s/%s', $parameter, $this->normaliezeUrlVariable($value));
       }
     }
 
     $qsa = '';
-    if(isset($parameters['query_string']))
+    if(isset($parameters['_qsa']))
     {
-      $qsa = '?' . $parameters['query_string'];
-      unset($parameters['query_string']);
+      $qsa = '?' . $parameters['_qsa'];
+      unset($parameters['_qsa']);
     }
 
     // @todo bisogna controllare token variabile non inizializzati
     
     return $url .
-          ($this->isDir ? '' : (array_key_exists('format', $this->params) ? '' : (self::$extension ? '.' . self::$extension : '')) )  . 
+          ($this->isDir ? '' : !empty($this->params['_format']) ? '.' . $this->params['_format'] : '') .
           $qsa;
-  }
-  
-  public final function createUrlAndGo($parameters = array(), $code = 301)
-  {
-    Routing::redirect($this->createUrl($parameters), $code);
   }
 
   /**
@@ -760,4 +740,9 @@ class Route implements RouteInterface
   {
     return $this->getParam('_controller');
   }
+
+    public function getFormat()
+    {
+        return $this->getParam('_format');
+    }
 }

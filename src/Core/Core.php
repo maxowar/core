@@ -203,7 +203,7 @@ class Core
    * inizializza le variabili di sistema, imposta i path dell'applicazione
    *
    */
-	public function __construct(Project $projectConfiguration)
+	protected function __construct(Project $projectConfiguration)
 	{
 	  $this->startTime = microtime(true);
 
@@ -213,31 +213,14 @@ class Core
 
     $this->configuration = $projectConfiguration;
 
-    $this->httpHeaders = array(); // @todo non è di conpetenza del front controller. spostare nel response
-    
     $this->javascript  = array(); // @todo non è di conpetenza del front controller. spostare nel response
     $this->stylesheet  = array(); // @todo non è di conpetenza del front controller. spostare nel response
-    $this->headTags  = array(); // @todo non è di conpetenza del front controller. spostare nel response
 
     $this->renderView = true;
-
-//    self::$instance = $this;
 
     $this->eventDispatcher = $projectConfiguration->getEventDispatcher();
 
     register_shutdown_function(array($this, 'shutdown'));
-
-    $this->initialize();
-	}
-
-	/**
-	 * Questa funzione si occupa di inizializzare le principali entità
-	 * dell'applicazione
-	 *
-	 */
-	public function initialize()
-	{
-
 	}
 
 	/**
@@ -253,26 +236,7 @@ class Core
 	 */
 	public static function createInstance(Project $projectConfiguration)
 	{
-	  $controllerName = ucfirst($projectConfiguration->getApplicationName()) . 'Controller';
-
         return new self($projectConfiguration);
-
-
-	  foreach($projectConfiguration->getControllersDir() as $path)
-	  {
-	    if(file_exists($filename = $path . DIRECTORY_SEPARATOR . self::parseControllerFileName($controllerName) . '.php'))
-	    {
-	      include_once $filename;
-
-	      //Config::get('application.debug') && Logger::info(sprintf('Core | loadController | Inclusa la classe "%s" per il dispatcher "%s"', $filename, $controllerName));
-
-	      return new self($projectConfiguration);
-	    }
-	  }
-
-	  throw new PageNotFound(sprintf('Impossibile trovare il controller "%s" con path "%s"',
-  	  $controllerName,
-  	  $filename));
 	}
 
 	/**
@@ -311,38 +275,7 @@ class Core
 	 // Logger::shutdown();
 	}
 
-  /**
-   * Routine per inizializzare la lingua dell'applicazione
-   *
-   * @return void
-   */
-  protected function initializeLanguage()
-  {
-    $this->lang = Config::get('LANG/default', 'it');
 
-    if (isset($_SESSION['lang']))
-    {
-      $this->logger("Core | initializeLanguage | lingua in sessione : ".$_SESSION['lang'],9);
-      $this->lang = $_SESSION['lang'];
-    }
-
-    if (isset($_REQUEST['lang']))
-    {
-      $this->logger("Core | initializeLanguage | lingua URL : ".$_REQUEST['lang'],9);
-      $this->lang = $_REQUEST['lang'];
-    }
-
-    $r = Config::get('LANG/languages');
-
-    if(strpos($r, $this->lang) === false)
-    {
-      $this->lang = Config::get('LANG/default', 'it');
-    }
-
-    $this->logger("Core | initializeLanguage | lingua corrente : {$this->lang} ($r)",9);
-
-    $_SESSION['lang'] = $this->lang;
-  }
 
   /**
    * Si occupa di inizializzare la sessione utente
@@ -491,23 +424,6 @@ class Core
     echo $buffer;
   }
 
-  /**
-   *
-   */
-  public function getZone()
-  {
-    return $this->zone;
-  }
-
-  public function getPage()
-  {
-    return $this->page;
-  }
-
-  public function getOperation()
-  {
-    return $this->oper;
-  }
 
   public function getActionName()
   {
@@ -547,29 +463,6 @@ class Core
     $this->getView()->setTemplate($name);
   }
 
-  /**
-   * Proxy-method per Route::getParam();
-   *
-   * @param $param
-   * @param $default
-   * @return mixed
-   */
-  public function getRequestParameter($param, $default = null)
-  {
-    return $this->getCurrentRequestRoute()->getParam($param, $default);
-  }
-
-  /**
-   * Proxy-method per Route::setParameter();
-   *
-   * @param $param
-   * @param $default
-   * @return mixed
-   */
-  public function setRequestParameter($param, $value = null)
-  {
-      return $this->getCurrentRequestRoute()->setParameter($param, $value);
-  }
 
   /**
    * ritorna il nome della directory corrente
@@ -601,16 +494,6 @@ class Core
     return $this->configuration;
   }
 
-  /**
-   * Imposta un header http
-   *
-   * @param string $header
-   * @return void
-   */
-  public function setHttpHeader($header)
-  {
-    $this->httpHeaders[$header];
-  }
 
   /**
    * Dispatching della richiesta HTTP
@@ -713,7 +596,7 @@ class Core
       }
       else
       {
-        throw new RuntimeException(sprintf('Connot find controller with name "%s", be sure to initialize it', $name));
+        throw new \RuntimeException(sprintf('Connot find controller with name "%s", be sure to initialize it', $name));
       }
     }
     return $this->controller_obj;
@@ -752,6 +635,13 @@ class Core
 
     $this->filterManager->execute($this->filterManager);
   }
+
+    public function handle()
+    {
+        $this->eventDispatcher->dispatch('core.handle');
+
+        return call_user_func(array($this->getController(), $this->action), $this->getRequest(), $this->getResponse());
+    }
   
   /**
    * Forward interno al controller per la gestione della pagina di errore HTTP 404
@@ -798,14 +688,6 @@ class Core
   // *
   // */
 
-  /**
-   * @deprecated vedi RenderingFilter
-   * @throws CoreException
-   */
-  public function render()
-  {
-    throw new CoreException('Core::render() - eliminata. vedi RenderingFilter');
-  }
 
   /**
    * Ritorna il path relativo del template in base al nome dell'action corrente
@@ -1153,15 +1035,7 @@ class Core
     return $this->renderer;
   }
 
-  public function enablePlugin($name)
-  {
-    $name = ucfirst($name) . 'Plugin';
-    $plugin = new $name();
 
-    $plugin->initialize($this);
-
-    Logger::info('Core | enablePlugin | Plugin ' . $name . ' inizializzato');
-  }
   
   public function addHeadTag($tag, array $attributes, $content = '')
   {
