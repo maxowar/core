@@ -1,0 +1,39 @@
+
+CmsPage:
+  options:
+    type:     InnoDB
+  tableName:  cms_pages
+  actAs:
+    NestedSet:
+      hasManyRoots:   false
+    I18n:
+      fields: [title, description, keywords, content]
+      actAs:
+        Sluggable:
+          canUpdate: true
+          fields: [title]
+        Versionable:
+          fields: [title, description, keywords, content]
+          length: 2
+  columns:
+    parent:
+      type: integer(4)
+      unsigned: true
+    decorator:
+      type: string(255)
+    template:
+      type: string(255)
+    title:
+      type: string(255)
+    description:
+      type: string(255)
+    keywords:
+      type: string(255)
+    content:
+      type: text
+    active:
+      type: boolean
+    redirect:
+      type: string(2024)
+    ttl:
+      type: integer(4)
