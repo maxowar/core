@@ -234,6 +234,11 @@ abstract class Controller
     throw new PageNotFoundException($message);
   }
 
+    public function getView()
+    {
+
+    }
+
     public function render($response)
     {
 

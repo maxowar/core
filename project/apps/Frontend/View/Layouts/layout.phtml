@@ -10,8 +10,9 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
 
-    <?php echo $this->loadStylesheet() ?>
-    <?php echo $this->loadJavascript() ?>
+    <?php echo $this->getAsset()->loadStylesheet() ?>
+    <?php echo $this->getAsset()->loadJavascript() ?>
+    <?php echo $this->getHtml()->loadMeta() ?>
 
 </head>
 

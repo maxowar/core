@@ -220,6 +220,8 @@ class Core
 
     $this->eventDispatcher = $projectConfiguration->getEventDispatcher();
 
+        self::$instance = $this; // transform Core back again in an singleton?!?
+
     register_shutdown_function(array($this, 'shutdown'));
 	}
 
@@ -327,35 +329,6 @@ class Core
 	}
 
 	/**
-	 * Include nell'esecuzione il file contenente la classe del controller di pagina
-	 *
-	 * @throws PageNotFoundException File del controller non trovato
-	 * @param string $controllerName
-	 */
-	public static function loadController($controllerName)
-	{
-        //$namespace = ucfirst($this->configuration->getApplicationName()) . '\\' . $controllerName;
-
-
-
-	  foreach(self::getCurrentInstance()->configuration->getControllersDir() as $path)
-	  {
-	    if(file_exists($filename = $path . DIRECTORY_SEPARATOR . self::parseControllerFileName($controllerName) . '.php'))
-	    {
-	      include_once $filename;
-
-	      //Config::get('application.debug') && Logger::debug(sprintf('Core | loadController | Inclusa la classe "%s" per il controller "%s"', $filename, $controllerName));
-
-	      return;
-	    }
-	  }
-
-	  throw new PageNotFound(sprintf('Impossibile trovare il controller "%s" con path "%s"',
-	    $controllerName,
-	    $filename));
-	}
-
-	/**
 	 * Ritorna l'istanza Session corrente
 	 *
 	 * @return Session
@@ -396,7 +369,7 @@ class Core
    *
    * @return Core
    */
-  public static function getCurrentInstance()
+  public static function getInstance()
   {
     return self::$instance;
   }
@@ -517,11 +490,13 @@ class Core
     $route = $this->routing->matchRequest($this->request);
 
     $this->forward($route->getController(), $route->getAction());
-
+/**
     if(!$this->getConfiguration()->isDebug())
     {
       ob_end_clean();
-    }
+    }*/
+
+      // life ends here! bye bye Response! :( we will miss u until next Request
   }
 
 
@@ -761,162 +736,7 @@ class Core
         return $this->routing;
     }
 
-  /**
-   * Aggiunge un javascript nel tag HEAD
-   *
-   * La lista dei files è inidicizzata con chiave inizializzata con il nome del file del foglio stesso
-   *
-   * Note:
-   * - Il metodo si occupa di aggiungere il suffisso <em>.js</em> ai nomi dei files
-   * - Il path di <var>$filename</var> pu&ograve; essere assoluto
-   *
-   * @param string $filename Path del file relativo all'applicazione
-   * @param string $position Valori validi [after|before]
-   */
-  public function addJavascript($filename, $position = 'after')
-  {
-    if(!Utility::isValidUri($filename))
-    {
-	    if(!Utility::isAbsolutePath($filename))
-	    {
-	      $filename = strtolower('/' . $this->getConfiguration()->getApplicationName() . '/js/' . $filename);
-	    }
-    }
 
-    if($position == 'before')
-    {
-      $this->javascript = array_merge(array($filename => $filename), $this->javascript);
-      return;
-    }
-    $this->javascript[$filename] = $filename;
-    return;
-  }
-
-  /**
-   * Aggiunge una lista di files javascript
-   *
-   * @param array $filenames
-   */
-  public function addJavascripts($filenames)
-  {
-    foreach($filenames as $filename)
-    {
-      $this->addJavascript($filename);
-    }
-  }
-
-  /**
-   * Aggiunge un foglio di stile nel tag HEAD
-   *
-   * La lista dei files è inidicizzata con chiave inizializzata con il nome del file del foglio stesso
-   *
-   * Note:
-   * - Il metodo si occupa di aggiungere il suffisso <em>.css</em> ai nomi dei files
-   * - Il path di <var>$filename</var> pu&ograve; essere assoluto
-   *
-   * Esempio d'uso:
-   * <code>
-   * Core::addStylesheet('main');
-   * Core::addStylesheet('ie6', array('position' => 'before'));
-   * Core::addStylesheet('print', array('media' => 'print'));
-   *
-   * // genera
-   *
-   * <link href="/application_name/css/ie6.css" type="text/css" rel="stylesheet" media="all" />
-   * <link href="/application_name/css/main.css" type="text/css" rel="stylesheet" media="all" />
-   * <link href="/application_name/css/print.css" type="text/css" rel="stylesheet" media="print" />
-   *
-   * </code>
-   *
-   * @param string $filename   Path del file relativo all'applicazione
-   * @param array  $parameters
-   */
-  public function addStylesheet($filename, $parameters = array())
-  {
-    if(!Utility::isAbsolutePath($filename) && !Utility::isValidUri($filename))
-    {
-      $filename = strtolower('/' . $this->getConfiguration()->getApplicationName() . '/css/' . $filename);
-    }
-
-    $position = isset($parameters['position']) ? $parameters['position'] : 'after';
-
-    $ary = array('filename' => $filename,
-                 'media'    => isset($parameters['media']) ? $parameters['media'] : 'all',
-                 'version'  => isset($parameters['version']) ? $parameters['version'] : null);
-
-    if($position == 'before')
-    {
-      $this->stylesheet = array_merge(array($filename => $ary), $this->stylesheet);
-      return;
-    }
-    else
-    {
-      $this->stylesheet[$filename] = $ary;
-      return;
-    }
-  }
-
-  /**
-   * Aggiunge una lista di files javascript
-   *
-   * @param array $filenames
-   */
-  public function addStylesheets($filenames)
-  {
-    foreach($filenames as $filename => $parameters)
-    {
-      $this->addStylesheet($filename, $parameters);
-    }
-  }
-
-  /**
-   * Rimuove tutti i javascript
-   */
-  public function cleanJavascript()
-  {
-    $this->javascript = array();
-  }
-
-  /**
-   * Rimuove tutti i fogli di stile
-   */
-  public function cleanStylesheet()
-  {
-    $this->stylesheet = array();
-  }
-
-  /**
-   * Ritorna la stringa da inserire nell'header html per caricare i javascript
-   *
-   * @return string
-   */
-  public function loadJavascript()
-  {
-    $str = '';
-    foreach ($this->javascript as $filename => $javascript)
-    {
-      $str .= sprintf('  <script type="text/javascript" src="%s%s"></script>' . "\n", $javascript , (Utility::isValidUri($javascript)? '':'.js' ) );
-    }
-    return $str;
-  }
-
-  /**
-   * Ritorna la stringa da inserire nell'header html per caricare i fogli di stile
-   *
-   * @return string
-   */
-  public function loadStylesheet()
-  {
-    $str = '';
-    foreach ($this->stylesheet as $filename => $stylesheet)
-    {
-      $str .= sprintf('  <link href="%s.css%s" type="text/css" rel="stylesheet" media="%s" />' . "\n",
-                      $stylesheet['filename'],
-                      isset($stylesheet['version']) ? '?' . $stylesheet['version'] : '',
-                      $stylesheet['media']);
-    }
-    return $str;
-  }
   
   public function loadHeadTags()
   {
@@ -1023,7 +843,7 @@ class Core
   }
 
   /**
-   * @return View
+   * @return \Core\View\View
    */
   public function getView()
   {

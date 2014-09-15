@@ -2,23 +2,28 @@
 
 namespace Frontend\Controller;
 
-use Core\Controller\Controller;
+use Core\Core;
 use Core\Http\Request;
 use Core\Http\Response;
 
-class Homepage extends Controller
+/**
+ * The homepage controller logic business
+ *
+ * @package Frontend\Controller
+ */
+class Homepage
 {
-    protected function configure()
-    {
-        $this->context->getView()->decorate('Layouts/layout');
-    }
-
     public function index(Request $request, Response $response)
     {
         $name = 'Massimo';
 
-        $this->lastname = 'Naccari';
+        $view = Core::getInstance()->getView();
+        //$view->attachNamespace('Frontend', Config::get('application.path') . '/apps/Frontend/View');
+        $view->decorate('Layouts/layout');
+        $view->setTemplate('Homepage/index');
+        $view->getAsset()->addStylesheet('main.css');
 
-        return array('name' => $name);
+        $response->setContent($view->render(array('name' => $name)), 'text/html');
+        return $response;
     }
 }

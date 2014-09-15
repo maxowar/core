@@ -36,28 +36,6 @@ class PHP extends View
     return 'PHP';
   }
 
-  /**
-   * Gestisce tutte le chiamate PHP del tipo:
-   *
-   * <code>$this->method()</code>
-   *
-   * dal template come chiamate all'oggetto Core
-   *
-   * @todo implementare un sistema di callback per gestire dinamicamente questa parte di codice
-   *
-   * @param string $method
-   * @param array $parameters
-   */
-  public function __call($method, $parameters)
-  {
-    if(is_callable(array($this->context, $method)))
-    {
-      return call_user_func_array(array($this->context, $method), $parameters);
-    }
-
-    throw new \RuntimeException("Metodo PHPView::$method() sconosciuto");
-  }
-
   public function __get($key)
   {
     return $this->context->$key;

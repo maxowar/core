@@ -56,7 +56,7 @@ class Manager
   public function loadConfiguration()
   {
     // rendering filter è sempre il primo(/ultimo)
-    $this->register(new Rendering());
+    //$this->register(new Rendering());
     /*
     // filtri utente
     $cache = new Cache();

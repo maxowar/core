@@ -15,6 +15,8 @@ use Symfony\Component\EventDispatcher\GenericEvent;
 abstract class View
 {
   protected $event_dispatcher;
+
+    protected $namespaces;
   
   /**
    * Output buffer
@@ -34,6 +36,8 @@ abstract class View
   private $isDecorator;
   
   private $id;
+
+    protected $helpers;
 
   /**
    *
@@ -61,6 +65,8 @@ abstract class View
    */
   protected $context;
 
+    private $helpersLoaded;
+
   public function __construct($context, $options, EventDispatcher $eventDispatcher = null)
   {
     $this->context = $context;
@@ -70,7 +76,7 @@ abstract class View
       // prova prima con context
       if(is_callable(array($this->context, 'getEventDispatcher')))
       {
-        $this->event_dispatcher = $this->context->getEventDispatcher();
+          $eventDispatcher = $this->context->getEventDispatcher();
       }
       else
       {
@@ -90,6 +96,10 @@ abstract class View
     }
 
     $this->event_dispatcher = $eventDispatcher;
+
+      $this->namespaces = array();
+      $this->helpers = array();
+      $this->helpersLoaded = false;
   }
   
   public function __destruct()
@@ -110,11 +120,11 @@ abstract class View
   {
     $this->event_dispatcher->dispatch('view.pre_render', new GenericEvent($this));
     
-    $this->preRender();
-
     $this->addVariables($variables);
     
     $this->variables = (array) $this->event_dispatcher->dispatch('view.filter_parameters', new GenericEvent($this, $this->variables))->getArguments();
+
+      $this->loadHelpers();
 
     $this->buffer = $this->doRender();
 
@@ -126,8 +136,6 @@ abstract class View
     }
     
     $this->event_dispatcher->dispatch('view.post_render', new GenericEvent($this));
-
-    $this->postRender();
 
     return $this->buffer;
   }
@@ -156,22 +164,6 @@ abstract class View
   }
 
   abstract public function doRender();
-
-  /**
-   *
-   */
-  public function postRender()
-  {
-
-  }
-
-  /**
-   *
-   */
-  public function preRender()
-  {
-
-  }
 
   public function setLogger($logger)
   {
@@ -209,15 +201,15 @@ abstract class View
    */
   public function setTemplate($template)
   {
-    foreach ((array) $this->getDefaultPath() as $path )
+    foreach ($this->getDefaultPath() as $path )
     {
       $this->template = str_replace('//', '/', $path . DIRECTORY_SEPARATOR . $template . $this->getSuffix() . $this->getTemplateExtension());
-      if(file_exists($this->template))
+      if(!file_exists($this->template))
       {
-        return;
+          throw new \Exception(sprintf('View "%s" non trovata', $this->template));
       }
     }
-    throw new \Exception(sprintf('View "%s" non trovata', $this->template));
+
   }
 
   public function getDefaultPath()
@@ -344,5 +336,43 @@ abstract class View
     // with type comparisons (e.g. === or is_int() etc).
     return is_string($value) ? htmlentities($value, ENT_QUOTES, Config::get('charset', 'UTF-8')) : $value;
   }
+
+    public function loadHelpers()
+    {
+        if(!$this->helpersLoaded)
+        {
+            $this->event_dispatcher->dispatch('view.load_helpers', new GenericEvent($this));
+            $this->helpersLoaded = true;
+        }
+    }
+
+    public function attachNamespace($namespace, $path)
+    {
+        $this->namespaces[] = array($namespace, $path);
+    }
+
+    public function addHelper($name, $object)
+    {
+        $this->helpers[$name] = $object;
+    }
+
+    public function getHelper($name)
+    {
+        return $this->helpers[$name];
+    }
+
+    public function __call($method, $args)
+    {
+        $this->loadHelpers();
+        if(strpos($method, 'get') === 0)
+        {
+            $method = strtolower(str_replace('get', '', $method));
+            if(isset($this->helpers[$method]))
+            {
+                return $this->helpers[$method];
+            }
+        }
+        throw new \RuntimeException('Invalid method');
+    }
 
 }

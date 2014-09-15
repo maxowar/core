@@ -5,6 +5,8 @@ namespace Core\Http;
 class Response
 {
 
+    protected $headers;
+
     /**
      * Mappa dei codici di stato HTTP
      *
@@ -54,9 +56,15 @@ class Response
         '505' => 'HTTP Version Not Supported',
     );
 
+    const MIME_HTML = 'text/html';
+    const MIME_JSON = 'application/json';
+
+
+    protected $content;
+
     public function __construct()
     {
-
+        $this->headers = array();
     }
 
     /**
@@ -135,5 +143,54 @@ class Response
         $url = preg_replace('#/+#', '/', $url);
 
         return $url;
+    }
+
+    public function setContentType($mimetype)
+    {
+        $this->setHeader('Content-Type', $mimetype);
+    }
+
+    public function setHeader($header, $value)
+    {
+        $this->headers[$header] = $value;
+    }
+
+    public function sendHeaders()
+    {
+        foreach($this->headers as $name => $value)
+        {
+            header(sprintf(strtolower($name) . ': ' . $value), true);
+        }
+
+    }
+
+    public function setJsonContent($data, $options = 0)
+    {
+        $this->content = json_encode($data, $options);
+    }
+
+    public function headersSent()
+    {
+        return headers_sent();
+    }
+
+    public function send()
+    {
+        $this->sendHeaders();
+        print $this->content;
+    }
+
+    public function setFile($filename)
+    {
+        $this->setHeader('Content-Length', filesize($filename));
+        $this->setHeader('Content-Type', '');
+
+        $this->data = file_get_contents($filename);
+    }
+
+    public function setContent($content, $mimetype = 'text/hmtl')
+    {
+        $this->content = $content;
+        $this->setContentType($mimetype);
     }
 }

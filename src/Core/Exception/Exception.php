@@ -110,9 +110,9 @@ class Exception extends \Exception
 
     $route = Routing::getMatchedRoute();
 
-    if(Core::getCurrentInstance())
+    if(Core::getInstance())
     {
-    $dataController = Core::getCurrentInstance()->getDataController();
+    $dataController = Core::getInstance()->getDataController();
     if($dataController instanceof DataController)
     {
       $databaseTable = self::formatArrayAsHtml(array('connections' => array_keys($dataController::$connections)));
@@ -124,21 +124,21 @@ class Exception extends \Exception
 
     $configTable = self::formatArrayAsHtml(array(
     'paths' => array(
-      'core' =>   Core::getCurrentInstance()->getConfiguration()->getCoreDir(),
-      'root' =>   Core::getCurrentInstance()->getConfiguration()->getRootDir(),
-      'controller' => Core::getCurrentInstance()->getConfiguration()->getControllersDir(),
-      'template' => Core::getCurrentInstance()->getConfiguration()->getTemplatesDir()),
-    'site' => Core::getCurrentInstance()->getConfiguration()->getSite(),
-    'site_id' => Core::getCurrentInstance()->getConfiguration()->getSiteId(),
-    'application' => Core::getCurrentInstance()->getConfiguration()->getApplicationName()
+      'core' =>   Core::getInstance()->getConfiguration()->getCoreDir(),
+      'root' =>   Core::getInstance()->getConfiguration()->getRootDir(),
+      'controller' => Core::getInstance()->getConfiguration()->getControllersDir(),
+      'template' => Core::getInstance()->getConfiguration()->getTemplatesDir()),
+    'site' => Core::getInstance()->getConfiguration()->getSite(),
+    'site_id' => Core::getInstance()->getConfiguration()->getSiteId(),
+    'application' => Core::getInstance()->getConfiguration()->getApplicationName()
 
     ));
 
     $constantsTable  = self::formatArrayAsHtml(Config::getAll());
     }
 
-    if(Core::getCurrentInstance() &&
-       $session = Core::getCurrentInstance()->getSession())
+    if(Core::getInstance() &&
+       $session = Core::getInstance()->getSession())
     {
     $userTable    = self::formatArrayAsHtml(array('started' => $session->isStarted(),
                                                   'id' => $session->getId(),

@@ -1,6 +1,7 @@
 <?php
 
 namespace Core\Filter;
+use Core\Http\Response;
 
 /**
  * Execution filter esegue la logica di back-end dell'applicazione (controller execution)
@@ -30,12 +31,9 @@ class Execution extends Filter
     // esecuzione della logica business del controller
     $res = $context->handle();
 
-      if(is_string($res)) {
-          // set body response to $res
-      } elseif (is_array($res)) {
-          $filterManager->context->getView()->addVariables($res);
-      } else {
-          throw new \InvalidArgumentException('Invalid Controller return value');
+      if(!($res instanceof Response))
+      {
+          throw new \InvalidArgumentException('Controller must return a Response instance type');
       }
     
     // post-execute
@@ -44,9 +42,13 @@ class Execution extends Filter
       $context->getController()->postExecute();
     }
 
-    if($res === false)
-    {
-      $context->renderWithoutView();
-    }
+      while(ob_get_level() > 0)
+      {
+          ob_end_clean();
+      }
+
+      $res->send();
+
+      return;
   }
 }
