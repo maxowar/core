@@ -1,6 +1,9 @@
 <?php
 
 namespace Core\Routing\Route;
+use Core\Core;
+use Core\Http\Response;
+use Core\Util\Utility;
 
 /**
  * RedirectRoute
@@ -40,13 +43,13 @@ class Redirect extends Route
    */
   public function initialize(array $parameters)
   {
-    $parameters['params']['p'] = '_redirect_';
+    $parameters['params']['_action'] = null;
     
     parent::initialize($parameters);
     
     if(!isset($parameters['target']))
     {
-      throw new RoutingException('RedirectRoute need a "target" option');
+      throw new \InvalidArgumentException('Missin mandatory "target" option');
     }
 
     $this->target = $parameters['target'];
@@ -61,23 +64,19 @@ class Redirect extends Route
    */
   public function matchesUrl($url)
   {
+      $response = new Response();
     if(parent::matchesUrl($url))
     {
-      // redirect a URI
-      if(Utility::isValidUri($this->target))
+      // route name
+      if(!Utility::isValidUri($this->target))
       {
-        Routing::redirect($this->target, $this->code);
+          $this->target = Core::getInstance()->getRouting()->get($this->target)->createUrl($this->params);
       }
-      
-      // redirect a Route
-      Routing::redirect(Routing::get($this->target)->createUrlAndGo($this->params, $this->code));
+        $response->redirect($this->target, $this->code);
+
     }
     
     return false;
   }
-  
-  public function getParamsForCache()
-  {
-    return array('target' => $this->target, 'code' => $this->code);
-  }
+
 }
