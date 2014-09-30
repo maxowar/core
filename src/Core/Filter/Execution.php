@@ -2,6 +2,7 @@
 
 namespace Core\Filter;
 use Core\Http\Response;
+use Symfony\Component\EventDispatcher\GenericEvent;
 
 /**
  * Execution filter esegue la logica di back-end dell'applicazione (controller execution)
@@ -15,9 +16,6 @@ class Execution extends Filter
 {
   public function execute(Manager $filterManager)
   {
-    // eseguo un eventuale altro filtro
-    $filterManager->execute();
-    
     $context = $filterManager->getContext();
     
     // pre-execute @todo spostare in Core. Decidere se usare hook o eventi o basta Controller::configure()
@@ -29,9 +27,15 @@ class Execution extends Filter
     //Logger::info(sprintf('ExecutionFilter | execute | Execute controller "%s/%s"', $dispatcher->getModuleName(), $dispatcher->getActionName()));
     
     // esecuzione della logica business del controller
-    $res = $context->handle();
+    $response = $context->handle();
 
-      if(!($res instanceof Response))
+      // eseguo un eventuale altro filtro
+      $filterManager->execute($filterManager);
+
+
+      $response = $context->getEventDispatcher()->dispatch('execution.filter', $event = new FilterResponse($response))->getResponse();
+
+      if(!($response instanceof Response))
       {
           throw new \InvalidArgumentException('Controller must return a Response instance type');
       }
@@ -47,8 +51,10 @@ class Execution extends Filter
           ob_end_clean();
       }
 
-      $res->send();
+      $response->send();
 
       return;
   }
+
+
 }

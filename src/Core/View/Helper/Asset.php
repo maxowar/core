@@ -149,7 +149,7 @@ class Asset
      */
     public function cleanStylesheet()
     {
-        $this->stylesheet = array();
+        $this->stylesheets = array();
     }
 
     /**

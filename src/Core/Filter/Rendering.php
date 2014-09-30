@@ -16,68 +16,22 @@ class Rendering extends Filter
 {
   public function execute(Manager $filterManager)
   {
-    //$filterManager->getContext()->getEventDispatcher()->connect('view.cache_enable', array($this, 'listenToViewCacheEnable'));
-    //$filterManager->getContext()->getEventDispatcher()->connect('view.filter_id', array($this, 'listenToFilterViewId'));
-    
     $filterManager->execute();
-
-    // è il momento propizio per inviare gli headers ... hahaha non sono gestiti! hahah
-    
-
 
     if($filterManager->getContext()->shallRender())
     {
-      $this->send($filterManager);
+        $view = $filterManager->getContext()->getView();
+
+        $filterManager->context->getEventDispatcher()->dispatch('filter.rendering', new GenericEvent($view));
+
+
+        // inizializzo automaticamente il template se questo non è stato inizializzato manualmente
+        if(!$view->getTemplate())
+        {
+            $view->setTemplate($filterManager->getContext()->getActionTemplate());
+        }
+
+        $output = $view->render();
     }
-    
-    exit(0);
   }
-
-  /**
-   * Invia l'output al client
-   * 
-   * @param unknown_type $filterManager
-   */
-  public function send($filterManager)
-  {
-
-    $renderer = $filterManager->getContext()->getView();
-
-      $filterManager->context->getEventDispatcher()->dispatch('filter.rendering', new GenericEvent($renderer));
-
-    
-    // inizializzo automaticamente il template se questo non è stato inizializzato manualmente
-    if(!$renderer->getTemplate())
-    {
-      $renderer->setTemplate($filterManager->getContext()->getActionTemplate());
-    }
-    
-    $output = $renderer->render();
-    
-    while(ob_get_level() > 0)
-    {
-      ob_end_clean();
-    }
-    
-    echo $output;
-  }
-  
-  /**
-   * Modifica l'id di un oggetto View inserendo un hash dei parametri della Request
-   * 
-   * @param Event $event
-   */
-  public function listenToFilterViewId(Event $event, $id)
-  {    
-    $hashParameters = '';
-    $hashValues = '';
-    foreach(Routing::getCurrentRequestParameters() as $parameter => $value)
-    {
-      $hashParameters .= $parameter;
-      $hashValues .= $value;
-    }
-
-    return md5($id . $hashParameters) . '.' . md5($id . $hashValues);
-  }
-
 }

@@ -19,7 +19,12 @@ return array(
         'url' => '/who/:name',
         'params' => array('_controller' => 'StaticContent', '_action' => 'who', 'extra' => 'val'),
     )),
-
+/*
+    new Route('welcome', array(
+        'url' => '/:_action',
+        'view' => 'Info/welcome.phtml',
+    )),
+*/
     new Route('static_content', array(
         'url' => '/:_action',
         'params' => array('_controller' => 'StaticContent'),

@@ -9,16 +9,14 @@ class StaticContent extends Controller
 {
     public function configure()
     {
-        $this->context->getView()->decorate('Layouts/layout');
+        $this->getView()->decorate('Layouts/layout');
     }
 
-    public function who(Request $request)
+    public function who(Request $request, Response $response)
     {
-        return array(
-            'name' => $request->getQuery('name'),
-            'surname' => $request->getQuery('surname'),
-            'extra' => $this->context->getRouting()->getMatchedRoute()->getParam('extra')
-        );
+        $this->name = $request->getQuery('name');
+        $this->surname = $request->getQuery('surname');
+        $this->extra  = $this->context->getRouting()->getMatchedRoute()->getParam('extra');
     }
 
     public function whereis()
@@ -26,8 +24,8 @@ class StaticContent extends Controller
 
     }
 
-    public function contact()
+    public function contact(Request $request, Response $response)
     {
-
+        return $this->render($response);
     }
 }

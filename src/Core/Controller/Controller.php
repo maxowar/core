@@ -5,6 +5,8 @@ namespace Core\Controller;
 use Core\Core;
 use Core\Http\Response;
 use Core\Util\Utility;
+use Core\View\View;
+use Symfony\Component\EventDispatcher\Event;
 
 /**
  * Rappreseta il controller della pagina
@@ -25,14 +27,21 @@ abstract class Controller
 	 */
 	protected $context;
 
+    /**
+     * @var \Core\View\View
+     */
+    protected $view;
+
   /**
    *
    * @param Core  $context
    */
-	public function __construct(Core $context)
+	public final function __construct(Core $context)
 	{
         $this->context = $context;
         $this->viewVariables = array();
+
+        $context->getEventDispatcher()->addListener('execution.filter', array($this, 'listenToExecutionFilter'));
 
         $this->configure();
 	}
@@ -41,6 +50,20 @@ abstract class Controller
 	{
 
 	}
+
+    public function listenToExecutionFilter(Event $event)
+    {
+        $response = $event->getSubject();
+        if(is_string($response))
+        {
+            $response = $this->context->getResponse()->setContent($response);
+        }
+        else if(is_array($response))
+        {
+            $response = $this->context->getResponse()->setContent($this->context->getView()->render($response));
+        }
+        return $response;
+    }
 
 	public function log($msg, $level = 7)
 	{
@@ -103,24 +126,10 @@ abstract class Controller
 	}
 
 
-	public function setView($name="")
+	public function setTemplate($template)
 	{
-		$this->context->setView($name);
+		$this->getView()->setTemplate($template);
 	}
-
-  /**
-   * (proxy-method) Core::getRequestParameter()
-   *
-   * @author Massimo Naccari
-   *
-   * @param unknown_type $param
-   * @param unknown_type $default
-   *
-   */
-  public function getRequestParameter($param, $default = null)
-  {
-    return $this->context->getRequestParameter($param, $default);
-  }
 
   /**
    * (proxy-method) Core::setRequestParameter()
@@ -234,13 +243,34 @@ abstract class Controller
     throw new PageNotFoundException($message);
   }
 
+    /**
+     * Nota: futuro uso diverso di Core->getView()
+     *
+     * @return \Core\View\View
+     */
     public function getView()
     {
-
+        if(!$this->view)
+        {
+            $this->view = $this->context->getView();
+        }
+        return $this->view;
     }
 
-    public function render($response)
+    public function setView($view)
     {
+        $this->view = $view;
+    }
 
+    public function render($variables = array(), $response = null)
+    {
+        if(!$response)
+        {
+            $response = $this->context->getResponse();
+        }
+        $view = $this->getView();
+        $view->setTemplate($this->context->getControllerName() . '/' . $this->context->getActionName());
+        $response->setContent($view->render($variables));
+        return $response;
     }
 }

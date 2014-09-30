@@ -2,6 +2,13 @@
 
 namespace Core\Http;
 
+/**
+ * Generic rapresentation of a HTTP Response
+ *
+ * Use this class to send data to the client/browser
+ *
+ * @package Core\Http
+ */
 class Response
 {
 
@@ -148,11 +155,15 @@ class Response
     public function setContentType($mimetype)
     {
         $this->setHeader('Content-Type', $mimetype);
+
+        return $this;
     }
 
     public function setHeader($header, $value)
     {
         $this->headers[$header] = $value;
+
+        return $this;
     }
 
     public function sendHeaders()
@@ -186,11 +197,22 @@ class Response
         $this->setHeader('Content-Type', '');
 
         $this->data = file_get_contents($filename);
+
+        return $this;
     }
 
+    /**
+     * Set the content of the HTTP response
+     *
+     * @param string $content
+     * @param string $mimetype
+     * @return $this
+     */
     public function setContent($content, $mimetype = 'text/hmtl')
     {
         $this->content = $content;
         $this->setContentType($mimetype);
+
+        return $this;
     }
 }
