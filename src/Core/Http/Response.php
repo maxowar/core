@@ -154,15 +154,13 @@ class Response
 
     public function setContentType($mimetype)
     {
-        $this->setHeader('Content-Type', $mimetype);
-
+        $this->setHeader('Content-Type', $mimetype . '; charset=UTF-8'); // UTF-8!
         return $this;
     }
 
     public function setHeader($header, $value)
     {
         $this->headers[$header] = $value;
-
         return $this;
     }
 
@@ -172,7 +170,6 @@ class Response
         {
             header(sprintf(strtolower($name) . ': ' . $value), true);
         }
-
     }
 
     public function setJsonContent($data, $options = 0)
