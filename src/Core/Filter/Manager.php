@@ -34,6 +34,8 @@ class Manager
   public function __construct(Core $dispatcher)
   {
     $this->context = $dispatcher;
+
+      Filter::setManager($this);
   }
   
   public function reset()
@@ -85,20 +87,14 @@ class Manager
    * Esegue il prossimo filtro registrato
    *
    */
-  public function execute()
+  public function execute($coin = null)
   {
-    // skip to the next filter
-    ++$this->index;
+    $this->index++;
 
     if ($this->index < count($this->chain))
     {
-      if(Config::get('application.debug', false))
-      {
-        //Logger::debug('FilterManager | execute | esecuzione del filtro "' . get_class($this->chain[$this->index]) . '"');
-      }
-
       // eseguo il filtro
-      $this->chain[$this->index]->execute($this);
+      $this->chain[$this->index]->execute($coin);
     }
   }
 

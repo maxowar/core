@@ -3,6 +3,7 @@
 namespace Core\Controller;
 
 use Core\Core;
+use Core\Http\Event\FilterResponse;
 use Core\Http\Response;
 use Core\Util\Utility;
 use Core\View\View;
@@ -27,10 +28,6 @@ abstract class Controller
 	 */
 	protected $context;
 
-    /**
-     * @var \Core\View\View
-     */
-    protected $view;
 
   /**
    *
@@ -41,28 +38,43 @@ abstract class Controller
         $this->context = $context;
         $this->viewVariables = array();
 
-        $context->getEventDispatcher()->addListener('execution.filter', array($this, 'listenToExecutionFilter'));
+        //$context->getEventDispatcher()->addListener('response.filter', array($this, 'listenToExecutionFilter'));
 
         $this->configure();
 	}
+
+    /**
+     * Always good old style View variables passing
+     *
+     * @param $key
+     * @param $value
+     */
+    public function __set($key, $value)
+    {
+        $this->getView()->addVariable($key, $value);
+    }
 
 	protected  function configure()
 	{
 
 	}
 
-    public function listenToExecutionFilter(Event $event)
+    public function listenToExecutionFilter(FilterResponse $event)
     {
-        $response = $event->getSubject();
+        if(($response = $event->getResult()) instanceof Response)
+        {
+            return;
+        }
+        // text
         if(is_string($response))
         {
-            $response = $this->context->getResponse()->setContent($response);
+            $event->getResponse()->setContent($response);
         }
+        // view parameters
         else if(is_array($response))
         {
-            $response = $this->context->getResponse()->setContent($this->context->getView()->render($response));
+            $event->getResponse()->setContent($this->context->getView()->render($response));
         }
-        return $response;
     }
 
 	public function log($msg, $level = 7)
@@ -81,26 +93,6 @@ abstract class Controller
 	{
         $this->context->getView()->addVariable($key, $value);
 	}
-
-  /**
-   * Sets a variable for the template.
-   *
-   * This is usefull for shortcut for:
-   *
-   * <code>$this->setVar('name', 'value')</code>
-   * <code>$this->addData('d', 'room')</code>
-   *
-   * @param string $key   The variable name
-   * @param string $value The variable value
-   *
-   * @return boolean always true
-   *
-   * @see setVar()
-   */
-  public function __set($key, $value)
-  {
-    $this->viewVariables[$key] = $value;
-  }
 
   /**
    * Gets a variable for the template.
@@ -250,27 +242,35 @@ abstract class Controller
      */
     public function getView()
     {
-        if(!$this->view)
-        {
-            $this->view = $this->context->getView();
-        }
-        return $this->view;
+         return $this->context->getView();
     }
 
-    public function setView($view)
+    public function render($template = null, $variables = array())
     {
-        $this->view = $view;
-    }
+        $response = $this->context->getResponse();
 
-    public function render($variables = array(), $response = null)
-    {
-        if(!$response)
-        {
-            $response = $this->context->getResponse();
-        }
         $view = $this->getView();
         $view->setTemplate($this->context->getControllerName() . '/' . $this->context->getActionName());
         $response->setContent($view->render($variables));
         return $response;
+    }
+
+    /**
+     * Interrompe il buffer dello per stampare a video un messaggio
+     *
+     * @param string $text La stringa di testo da stampare
+     * @return void
+     */
+    public static function renderText($text)
+    {
+        $buffer = '';
+        while(ob_get_level() > 0)
+        {
+            $buffer .= ob_get_contents();
+            ob_end_clean();
+        }
+        echo $text;
+        ob_start();
+        echo $buffer;
     }
 }

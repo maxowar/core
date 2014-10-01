@@ -39,6 +39,8 @@ abstract class View
 
     protected $helpers;
 
+    private $disabled = false;
+
   /**
    *
    * @var CacheView
@@ -70,22 +72,9 @@ abstract class View
   public function __construct($context, $options, EventDispatcher $eventDispatcher = null)
   {
     $this->context = $context;
-    
-    if(!$eventDispatcher)
-    {
-      // prova prima con context
-      if(is_callable(array($this->context, 'getEventDispatcher')))
-      {
-          $eventDispatcher = $this->context->getEventDispatcher();
-      }
-      else
-      {
-        throw new \Exception('Need a EventDispatcher instance available in the context'); // problemi di compatibilità
-      }
-    }
 
     $this->options = array_merge(array('default_path' => '',
-    																	 'template_extension' => '',
+    									'template_extension' => '',
                                        'cache_driver' => 'sfNoCache'
                                   ),
                                  $options);
@@ -118,11 +107,16 @@ abstract class View
 
   public function render($variables = array())
   {
-    $this->event_dispatcher->dispatch('view.pre_render', new GenericEvent($this));
+      if($this->disabled)
+      {
+          return null;
+      }
+
+      $this->event_dispatcher && $this->event_dispatcher->dispatch('view.pre_render', new GenericEvent($this));
     
     $this->addVariables($variables);
-    
-    $this->variables = (array) $this->event_dispatcher->dispatch('view.filter_parameters', new GenericEvent($this, $this->variables))->getArguments();
+
+      $this->event_dispatcher && $this->variables = (array) $this->event_dispatcher->dispatch('view.filter_parameters', new GenericEvent($this, $this->variables))->getArguments();
 
       $this->loadHelpers();
 
@@ -134,8 +128,8 @@ abstract class View
 
       $this->buffer = $this->decorator->render();
     }
-    
-    $this->event_dispatcher->dispatch('view.post_render', new GenericEvent($this));
+
+      $this->event_dispatcher && $this->event_dispatcher->dispatch('view.post_render', new GenericEvent($this));
 
     return $this->buffer;
   }
@@ -373,6 +367,15 @@ abstract class View
             }
         }
         throw new \RuntimeException('Invalid method');
+    }
+
+    /**
+     * Disabilita il caricamento del motore di rendering segnalandolo a RenderingFilter
+     *
+     */
+    public function disable()
+    {
+        $this->disabled = true;
     }
 
 }

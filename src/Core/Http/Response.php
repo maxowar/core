@@ -208,7 +208,7 @@ class Response
      * @param string $mimetype
      * @return $this
      */
-    public function setContent($content, $mimetype = 'text/hmtl')
+    public function setContent($content, $mimetype = 'text/html')
     {
         $this->content = $content;
         $this->setContentType($mimetype);

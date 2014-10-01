@@ -4,7 +4,9 @@ namespace Core;
 
 use Core\Configuration\Project;
 use Core\Exception\PageNotFound;
+use Core\Filter\Filter;
 use Core\Filter\Manager;
+use Core\Http\Event\FilterRequest;
 use Core\Routing\Route\Route;
 use Core\Routing\Routing;
 use Core\Util\Config;
@@ -374,28 +376,7 @@ class Core
     return self::$instance;
   }
 
-  /**
-   * Interrompe il buffer dello stdout per stampare a video un messaggio
-   *
-   * @param string $text La stringa di testo da stampare
-   * @return void
-   */
-  public static function renderText($text)
-  {
-    $buffer = '';
-    while(ob_get_level() > 0)
-    {
-      $buffer .= ob_get_contents();
 
-      ob_end_clean();
-    }
-
-    echo $text;
-
-    ob_start();
-
-    echo $buffer;
-  }
 
 
   public function getActionName()
@@ -607,13 +588,12 @@ class Core
 
     $this->filterManager = new Manager($this);
     $this->filterManager->loadConfiguration();
-
-    $this->filterManager->execute($this->filterManager);
+    $this->filterManager->execute();
   }
 
     public function handle()
     {
-        $this->eventDispatcher->dispatch('core.handle');
+        $this->eventDispatcher->dispatch('request.filter', new FilterRequest($this->getRequest()));
 
         return call_user_func(array($this->getController(), $this->action), $this->getRequest(), $this->getResponse());
     }
@@ -638,16 +618,7 @@ class Core
     $this->response->redirect($route, $cod);
   }
 
-  /**
-   * controlla che sia stata effettuata una richiesta asincrona con l'oggetto
-   * javascript XMLHTTPRequest
-   *
-   * @return boolean
-   */
-  public function isXmlHttpRequest()
-  {
-    return (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest');
-  }
+
 
   /**
    *
@@ -672,15 +643,6 @@ class Core
   public function getActionTemplate()
   {
     return $this->getControllerName() . DIRECTORY_SEPARATOR . $this->getActionName();
-  }
-
-  /**
-   * Disabilita il caricamento del motore di rendering segnalandolo a RenderingFilter
-   *
-   */
-  public function renderWithoutView()
-  {
-    $this->renderView = false;
   }
 
   /**
@@ -781,14 +743,12 @@ class Core
             {
                 $attributes .= sprintf('%s="%s" ', $key, $value);
             }
-
         }
       }
       else
       {
           if($name == 'title')
           {
-
               $str .= sprintf('  <title> %s' . "</title> \n", $content );
           }
           else
@@ -807,12 +767,7 @@ class Core
   public function initializeView()
   {
     $this->renderer = $this->initializeRenderer();
-
-    //$this->renderer->setSuffix( Config::get('VIEW/suffix', '.view'));
-
     $this->renderer->addVariable('context', $this);
-
-    $this->eventDispatcher->dispatch('view.configure', new GenericEvent($this->renderer));
 
     $this->isViewInitialized = true;
   }

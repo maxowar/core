@@ -105,7 +105,7 @@ class Request
      */
     public function getQuery($key)
     {
-        if($key)
+        if(isset($this->query[$key]))
         {
             return $this->query[$key];
         }
@@ -174,6 +174,17 @@ class Request
     public function getMethod()
     {
         return $this->server['REQUEST_METHOD'];
+    }
+
+    /**
+     * controlla che sia stata effettuata una richiesta asincrona con l'oggetto
+     * javascript XMLHTTPRequest
+     *
+     * @return boolean
+     */
+    public function isXHR()
+    {
+        return (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest');
     }
 
     /**
