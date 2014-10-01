@@ -3,14 +3,10 @@
 namespace Core;
 
 use Core\Configuration\Project;
-use Core\Exception\PageNotFound;
-use Core\Filter\Filter;
 use Core\Filter\Manager;
 use Core\Http\Event\FilterRequest;
-use Core\Routing\Route\Route;
 use Core\Routing\Routing;
 use Core\Util\Config;
-use Core\Util\Utility;
 use Core\Http\Request;
 use Core\Http\Response;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -29,8 +25,8 @@ use Symfony\Component\EventDispatcher\GenericEvent;
  *
  * <code>
  * <?php
- * $configuration = ProjectConfiguration::getApplicationConfiguration('backend');
- * Core::createInstance($configuration)->dispatch();
+ * $configuration = new \Frontend\Configuration\Configuration('prod');
+ * Core\Core::createInstance($configuration)->dispatch();
  * ?>
  * </code>
  *
@@ -40,13 +36,6 @@ use Symfony\Component\EventDispatcher\GenericEvent;
  */
 class Core
 {
-  /**
-   * Roba vecchia
-   * 
-   * @var string
-   */
-  public $zone, $page, $oper;
-
   /**
    * Inizio esecuzione request dispatcher
    *
@@ -63,40 +52,11 @@ class Core
   private $eventDispatcher;
 
   /**
-   * Lista delle voci del dizionario per la lingua corrente
-   *
-   * @var array
-   */
-  public $labels;
-
-  /**
-   * id della lingua corrente
-   *
-   * @var string
-   */
-  public $lang;
-
-  /**
-   * Variabili della vista
-   * Roba vecchia
-   *
-   * @var array
-   */
-  public $data = array();
-
-  /**
    * Nome della vista corrente
    *
    * @var string
    */
   public $view;
-
- 	/**
- 	 * contiene la lista degli HTTP headers da inviare nel response
- 	 *
- 	 * @var array
- 	 */
- 	private $httpHeaders;
 
   /**
    * Riferimento al DB per effettuare le query
@@ -132,36 +92,10 @@ class Core
 
 
   /**
-   * Lista dei javascript della response
-   *
-   * @var array
-   */
-  private $javascript;
-
-  /**
-   * Lista dei fogli di stile della response
-   *
-   * @var array
-   */
-  private $stylesheet;
-  
-  /**
-   * 
-   * @var array
-   */
-  private $headTags;
-
-  /**
    * @var $filterManager FilterManager
    */
   protected $filterManager;
 
-  /**
-   * Lista di Meta tags HTML
-   *
-   * @var unknown_type
-   */
-  public $meta = array();
 
   /**
    * Controller vector
@@ -211,14 +145,7 @@ class Core
 
 	  //sfTimerManager::getTimer('Total execution');
 
-    header("Content-Type: text/html; charset=UTF-8"); // @todo non è di conpetenza del front controller. spostare nel response
-
     $this->configuration = $projectConfiguration;
-
-    $this->javascript  = array(); // @todo non è di conpetenza del front controller. spostare nel response
-    $this->stylesheet  = array(); // @todo non è di conpetenza del front controller. spostare nel response
-
-    $this->renderView = true;
 
     $this->eventDispatcher = $projectConfiguration->getEventDispatcher();
 
