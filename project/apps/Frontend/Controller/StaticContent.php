@@ -4,6 +4,7 @@ namespace Frontend\Controller;
 
 use Core\Controller\Controller;
 use Core\Http\Request;
+use Core\Http\Response;
 
 class StaticContent extends Controller
 {
@@ -17,6 +18,9 @@ class StaticContent extends Controller
         $this->name = $request->getQuery('name');
         $this->surname = $request->getQuery('surname');
         $this->extra  = $this->context->getRouting()->getMatchedRoute()->getParam('extra');
+        $this->another  = $request->getQuery('another', 'null');
+
+        $this->render();
     }
 
     public function whereis()

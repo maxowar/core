@@ -25,6 +25,11 @@ return array(
         'view' => 'Info/welcome.phtml',
     )),
 */
+    new Route('features', array(
+        'url' => '/features/:_action',
+        'params' => array('_controller' => 'Features'),
+    )),
+
     new Route('static_content', array(
         'url' => '/:_action',
         'params' => array('_controller' => 'StaticContent'),
