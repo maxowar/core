@@ -1,7 +1,7 @@
 <?php
 
-use Core\Routing\Routing;
 use Core\Routing\Route\Route;
+use Core\Routing\Route\Template;
 
 return array(
 
@@ -19,12 +19,12 @@ return array(
         'url' => '/who/:name',
         'params' => array('_controller' => 'StaticContent', '_action' => 'who', 'extra' => 'val'),
     )),
-/*
-    new Route('welcome', array(
-        'url' => '/:_action',
+
+    new Template('welcome', array(
+        'url' => '/info/:_action',
         'view' => 'Info/welcome.phtml',
     )),
-*/
+
     new Route('features', array(
         'url' => '/features/:_action',
         'params' => array('_controller' => 'Features'),
