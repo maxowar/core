@@ -103,11 +103,11 @@ class Request
      *
      * @return mixed
      */
-    public function getQuery($key)
+    public function getQuery($key = null, $default = null)
     {
-        if(isset($this->query[$key]))
+        if($key)
         {
-            return $this->query[$key];
+            return isset($this->query[$key]) ? $this->query[$key] : $default;
         }
         return $this->query;
     }

@@ -31,7 +31,6 @@ class Route implements RouteInterface
     const TOKEN_TEXT = 'text';
     const TOKEN_VARIABLE = 'variable';
     const TOKEN_STAR = 'star';
-    //const TOKEN_SEPARATOR = 'separator';
 
     const DEFAULT_SEPARATOR = '/.';
 
@@ -39,7 +38,6 @@ class Route implements RouteInterface
   
   private $name,
           $url,
-          $regex,
           $compiled,
           $tokens,
           $isDir = false,
@@ -98,13 +96,13 @@ class Route implements RouteInterface
 
     $this->params = array_merge($this->params, $params);
 
-    // manca il parametro obbligatorio p e il modulo pure
+      // _controller param is mandatory
     if(!array_key_exists('_controller', $this->params))
     {
       throw new \Exception(sprintf('Bisogna specificare il parametro obbligatorio "_controller" per la route "%s"', $this->name));
     }
 
-    // setting della default action per un modulo
+    // setting della default action
     if(!array_key_exists('_action', $this->params))
     {
       $this->params['_action'] = 'index';

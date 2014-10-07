@@ -273,4 +273,12 @@ abstract class Controller
         ob_start();
         echo $buffer;
     }
+
+    /**
+     * @return \Core\Routing\Route\Route
+     */
+    public function getRoute()
+    {
+        return $this->getContext()->getRouting()->getMatchedRoute();
+    }
 }

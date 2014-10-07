@@ -13,14 +13,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\GenericEvent;
 
 /**
- * Contiene le routine per l'inizializzazione iniziale di ogni applicazione
- * e rappresenta il frontcontroller generico dell'applicazione ossia il dispatcher
- *
- * Ogni front-controller estenderà questa classe ed implementerà le proprie
- * routines a proprio piacimento sovrascrivendo in particolare le funzioni
- * di inizializzazione delle varie entità del sistema
- *
- * L'inizializzazione del dispatcher &egrave; molto semplice ed avviene attraverso il factory-method {@link Core::createInstance()}
+ * L'inizializzazione &egrave; molto semplice ed avviene attraverso il factory-method {@link Core::createInstance()}
  * passandogli l'oggetto ProjectConfiguration che gestisce le configurazioni necessarie all'applicazione
  *
  * <code>
@@ -398,11 +391,6 @@ class Core
     $route = $this->routing->matchRequest($this->request);
 
     $this->forward($route->getController(), $route->getAction());
-/**
-    if(!$this->getConfiguration()->isDebug())
-    {
-      ob_end_clean();
-    }*/
 
       // life ends here! bye bye Response! :( we will miss u until next Request
   }
