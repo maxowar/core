@@ -8,12 +8,13 @@ class Template extends Controller
     {
         $route = $this->getRoute();
 
-        $this->render($route->getParam('_view'));
+        $this->render($route->getTemplate());
     }
 
     public function getRoute()
     {
-        if(!($route = parent::getRoute() instanceof \Core\Routing\Route\Template))
+        $route = parent::getRoute();
+        if(!($route instanceof \Core\Routing\Route\Template))
         {
             throw new \RuntimeException('Expected Template Route object type');
         }

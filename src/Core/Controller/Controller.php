@@ -250,7 +250,11 @@ abstract class Controller
         $response = $this->context->getResponse();
 
         $view = $this->getView();
-        $view->setTemplate($this->context->getControllerName() . '/' . $this->context->getActionName());
+        if(!$template)
+        {
+            $template = $this->context->getControllerName() . '/' . $this->context->getActionName();
+        }
+        $view->setTemplate($template);
         $response->setContent($view->render($variables));
         return $response;
     }
