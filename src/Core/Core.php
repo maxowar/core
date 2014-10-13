@@ -298,8 +298,6 @@ class Core
   }
 
 
-
-
   public function getActionName()
   {
     return $this->action;
@@ -308,57 +306,6 @@ class Core
   public function getControllerName()
   {
     return $this->controller;
-  }
-
-  /**
-   * Ritorna la lingua corrente
-   *
-   * @return string
-   */
-  public function getLang()
-  {
-    return $this->lang;
-  }
-
-  /**
-   * Imposta il nome del layout da caricare
-   *
-   * @param string $name
-   * @return void
-   */
-  public function setView($name = "")
-  {
-    $this->view = $name;
-
-    if(empty($name))
-    {
-      $name = $this->getActionTemplate();
-    }
-
-    $this->getView()->setTemplate($name);
-  }
-
-
-  /**
-   * ritorna il nome della directory corrente
-   *
-   * @return string
-   */
-  public function getSite()
-  {
-    return $this->configuration->getSite();
-  }
-
-  /**
-   * ritorna l'id del sito
-   *
-   * Nota: L'id è uguale al gruppo associato se questo esiste
-   *
-   * @return integer
-   */
-  public function getSiteId()
-  {
-    return intval($this->configuration->getSiteId());
   }
 
   /**
@@ -383,6 +330,8 @@ class Core
     {
       ob_start();
     }
+
+      // initialize minimun backbone (Routing, Request, Response)
 
       $this->request = Request::createFromPHP();
       $this->response = new Response();

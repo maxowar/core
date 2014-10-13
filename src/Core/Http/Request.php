@@ -1,6 +1,7 @@
 <?php
 
 namespace Core\Http;
+use Core\Util\Parameter\Immutable;
 
 /**
  * Base rapresentation of a HTTP request
@@ -66,7 +67,7 @@ class Request
      */
     public function initialize($query = array(), $data = array(), $files = array(), $cookies = array(), $server = array())
     {
-        $this->query   = $query;
+        $this->query   = new Immutable($query);
         $this->data    = $data;
         $this->files   = $files;
         $this->cookies = $cookies;
