@@ -5,7 +5,7 @@ namespace Core\Filter;
 /**
  * Interfaccia dei filtri
  * 
- * Note: presa da Symony
+ * Note: presa da Symfony
  *
  * @author Massimo Naccari <massimo.naccari@wdmn.it>
  * @copyright Massimo Naccari

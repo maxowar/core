@@ -3,7 +3,6 @@
 namespace Core\Filter;
 
 use Core\Core;
-use Core\Util\Config;
 
 /**
  * Gestore dei filtri delle request

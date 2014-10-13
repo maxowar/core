@@ -21,8 +21,8 @@ return array(
     )),
 
     new Template('welcome', array(
-        'url' => '/info/:_action',
-        'view' => 'Info/welcome.phtml',
+        'url' => '/info/welcome',
+        'template' => 'Info/welcome',
     )),
 
     new Route('features', array(

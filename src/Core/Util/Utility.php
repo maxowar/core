@@ -293,7 +293,7 @@ class Utility
 
   public static function isAbsolutePath($path)
   {
-    return preg_match('%^([a-z]:)?\\\\|^/%i', $path);
+    return preg_match('%^([a-z]:)?\\\\|^/|^\\/%i', $path);
   }
 
   public static function isValidUri($string)

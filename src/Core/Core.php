@@ -9,6 +9,7 @@ use Core\Routing\Routing;
 use Core\Util\Config;
 use Core\Http\Request;
 use Core\Http\Response;
+use Core\Util\Utility;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\GenericEvent;
 
@@ -435,7 +436,15 @@ class Core
    */
   public function initializeController($controller)
   {
-    $controllerClassName = ucfirst($this->configuration->getApplicationName()) . '\\Controller\\' . $controller;
+      if(Utility::isAbsolutePath($controller))
+      {
+          $controllerClassName = $controller;
+      }
+      else
+      {
+          $controllerClassName = ucfirst($this->configuration->getApplicationName()) . '\\Controller\\' . $controller;
+      }
+
 
 
     // ritorno l'istanza del controller già inizializzata se esiste
